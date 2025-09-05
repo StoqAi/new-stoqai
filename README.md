@@ -29,4 +29,8 @@ O **StoqAi** é um sistema web desenvolvido em Python (Flask) para o gerenciamen
 - **Outros:** Werkzeug, mysql-connector-python
 
 ## Equipe do Projeto (RM's)
-- 561681,561864,561411,562675,563217
+- Giulia Bugatti / 562675
+- Ian Nobres / 561681
+- Henrique Moura / 561411
+- Henry Gimenez / 563217
+- Matheus Mikio / 561864
