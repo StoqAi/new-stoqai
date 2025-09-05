@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Atualizar Produto</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Gerenciar Produto</h1>
+        <p style="color:#555; margin-bottom:18px;">Atualize os campos abaixo para modificar um produto.</p>
+        <a href="{{ url_for('index') }}" class="btn" style="margin-bottom: 18px; width: 120px; height: 25px;">Voltar</a>
+        {% if erro %}
+            <div class="alerta">{{ erro }}</div>
+        {% endif %}
+        <form method="POST" style="margin-bottom: 0;">
+            <div class="form-group">
+                <label for="nome">Nome:</label>
+                <input type="text" id="nome" name="nome" value="{{ produto.Nome }}" required>
+            </div>
+            <div class="form-group">
+                <label for="preco">Preço:</label>
+                <input type="number" step="0.01" id="preco" name="preco" value="{{ produto.Preco }}" required>
+            </div>
+            <div class="form-group">
+                <label for="descricao">Descrição:</label>
+                <input type="text" id="descricao" name="descricao" value="{{ produto.Descricao or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="id_categoria">Categoria:</label>
+                <select id="id_categoria" name="id_categoria" required>
+                    <option value="">Selecione...</option>
+                    {% for cat in categorias %}
+                        <option value="{{ cat.IdCategoria }}" {% if produto.IdCategoria == cat.IdCategoria %}selected{% endif %}>{{ cat.Nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="id_fornecedor">Fornecedor:</label>
+                <select id="id_fornecedor" name="id_fornecedor">
+                    <option value="">Selecione...</option>
+                    {% for forn in fornecedores %}
+                        <option value="{{ forn.IdFornecedor }}" {% if produto.IdFornecedor == forn.IdFornecedor %}selected{% endif %}>{{ forn.Nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="quantidade">Quantidade em estoque:</label>
+                <input type="number" id="quantidade" name="quantidade" min="0" value="{{ produto.Quantidade }}" required>
+            </div>
+            <div style="display: flex; gap: 16px; margin-top: 18px;">
+                <button type="submit" class="btn" style="width: 180px; height: 45px;">Salvar Alterações</button>
+                <button
+                    type="submit"
+                    formaction="{{ url_for('excluir', id_produto=produto.IdProduto) }}"
+                    formmethod="POST"
+                    class="btn"
+                    style="background:#4b4b4b;width:150px; height: 45px;"
+                    onclick="return confirm('Tem certeza que deseja excluir este produto?');"
+                >Deletar Produto</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

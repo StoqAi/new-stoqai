@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% if fornecedor %}Editar{% else %}Cadastrar{% endif %} Fornecedor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <span class="logo-icon">◆</span>
+            <span class="logo-text">StoqAi</span>
+        </div>
+        <div class="navbar-center">
+            <a href="#" class="nav-link">Dashboard</a>
+            <a href="{{ url_for('index') }}" class="nav-link">Produtos</a>
+            <a href="#" class="nav-link">Categorias</a>
+            <a href="{{ url_for('fornecedores') }}" class="nav-link active">Fornecedores</a>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>{% if fornecedor %}Editar{% else %}Cadastrar{% endif %} Fornecedor</h1>
+        <p style="color:#555; margin-bottom:18px;">Atualize os campos abaixo para modificar um fornecedor.</p>
+        <a href="{{ url_for('fornecedores') }}" class="btn" style="margin-bottom: 18px; width: 120px; height: 25px;">Voltar</a>
+        {% if erro %}
+            <div class="alerta">{{ erro }}</div>
+        {% endif %}
+        <form method="POST">
+            <div class="form-group">
+                <label for="nome">Nome:</label>
+                <input type="text" id="nome" name="nome" value="{{ fornecedor.Nome if fornecedor else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="cnpj">CNPJ:</label>
+                <input type="text" id="cnpj" name="cnpj" value="{{ fornecedor.CNPJ if fornecedor else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="telefone">Telefone:</label>
+                <input type="text" id="telefone" name="telefone" value="{{ fornecedor.Telefone if fornecedor else '' }}">
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" value="{{ fornecedor.Email if fornecedor else '' }}">
+            </div>
+            <div style="display: flex; gap: 16px; margin-top: 18px;">
+                <button type="submit" class="btn">
+                    {% if fornecedor %}Salvar Alterações{% else %}Cadastrar{% endif %}
+                </button>
+                {% if fornecedor %}
+                <button
+                    type="submit"
+                    formaction="{{ url_for('excluir_fornecedor', id=fornecedor.IdFornecedor) }}"
+                    formmethod="POST"
+                    class="btn"
+                    style="background:#4b4b4b;"
+                    onclick="return confirm('Excluir fornecedor?');"
+                >Excluir</button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</body>
+</html>

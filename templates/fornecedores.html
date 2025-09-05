@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fornecedores</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <span class="logo-icon">◆</span>
+            <span class="logo-text">StoqAi</span>
+        </div>
+        <div class="navbar-center">
+            <a href="#" class="nav-link">Dashboard</a>
+            <a href="{{ url_for('index') }}" class="nav-link">Produtos</a>
+            <a href="{{ url_for('categorias') }}" class="nav-link">Categorias</a>
+            <a href="{{ url_for('fornecedores') }}" class="nav-link active">Fornecedores</a>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>Fornecedores</h1>
+        <p class="subtitle">Gerencie seus fornecedores de forma eficiente e intuitiva.</p>
+        <div style="display: flex; gap: 12px; margin-bottom: 18px; width: 100%; justify-content: flex-start;">
+            <a href="{{ url_for('novo_fornecedor') }}" class="btn" style="width: 120px; height: 22px;">Cadastrar</a>
+        </div>
+        <table id="fornecedores-tabela">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nome</th>
+                    <th>CNPJ</th>
+                    <th>Telefone</th>
+                    <th>Email</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in fornecedores %}
+                <tr>
+                    <td>{{ f.IdFornecedor }}</td>
+                    <td>{{ f.Nome }}</td>
+                    <td>{{ f.CNPJ }}</td>
+                    <td>{{ f.Telefone or '' }}</td>
+                    <td>{{ f.Email or '' }}</td>
+                    <td>
+                        <a href="{{ url_for('editar_fornecedor', id=f.IdFornecedor) }}" class="btn" style="height: auto; font-size: 16px;">Editar</a>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

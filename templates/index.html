@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>StoqAi - Gerenciador de Estoque</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <span class="logo-icon">◆</span>
+            <span class="logo-text">StoqAi</span>
+        </div>
+        <div class="navbar-center">
+            <a href="#" class="nav-link">Dashboard</a>
+            <a href="#" class="nav-link active">Produtos</a>
+            <a href="#" class="nav-link">Categorias</a>
+            <a href="#" class="nav-link">Fornecedores</a>
+            <a href="#" class="nav-link">Relatórios</a>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>Produtos</h1>
+        <p class="subtitle">Gerencie seu estoque de forma eficiente e intuitiva.</p>
+        <div style="display: flex; gap: 12px; margin-bottom: 18px; width: 100%; justify-content: flex-start;">
+            <a href="{{ url_for('cadastrar') }}" class="btn" style="width: 120px; height: 22px;">Cadastrar</a>
+            <button id="btn-gerenciar" class="btn" style="width: 120px; height: 36px;">Gerenciar</button>
+        </div>
+        <table id="produtos-tabela">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nome</th>
+                    <th>ID Categoria</th>
+                    <th>ID Fornecedor</th>
+                    <th>Quantidade</th>
+                    <th>Preço</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in produtos %}
+                <tr data-codigo="{{ p.IdProduto }}">
+                    <td>{{ p.IdProduto }}</td>
+                    <td>{{ p.Nome }}</td>
+                    <td>{{ p.IdCategoria }}</td>
+                    <td>{{ p.IdFornecedor }}</td>
+                    <td>{{ p.Quantidade }}</td>
+                    <td>R$ {{ "%.2f"|format(p.Preco) }}</td>
+                    <td>
+                        <form style="display:inline;">
+                            <input type="number" name="quantidade" min="1" required style="width:90px;">
+                            <button formaction="{{ url_for('aumentar', id_produto=p.IdProduto) }}" formmethod="POST" title="Adicionar" style="width:40px;">+</button>
+                            <button formaction="{{ url_for('reduzir', id_produto=p.IdProduto) }}" formmethod="POST" title="Remover" style="width:40px;">-</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script>
+        let selectedRow = null;
+        let selectedCodigo = null;
+        const rows = document.querySelectorAll('#produtos-tabela tr[data-codigo]');
+        rows.forEach(row => {
+            row.addEventListener('click', function() {
+                if (selectedRow) selectedRow.classList.remove('selected-row');
+                selectedRow = this;
+                selectedCodigo = this.getAttribute('data-codigo');
+                this.classList.add('selected-row');
+            });
+        });
+        document.getElementById('btn-gerenciar').onclick = function() {
+            if (selectedCodigo) {
+                window.location.href = "{{ url_for('atualizar_estoque', id=0) }}".replace('0', selectedCodigo);
+            } else {
+                alert('Selecione um produto na tabela para gerenciar.');
+            }
+        };
+        const atualizarEstoqueUrl = "{{ url_for('atualizar_estoque', id='0') }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <style>
+        .selected-row {
+            background: #e0e7ff !important;
+        }
+        #produtos-tabela tr[data-codigo] {
+            cursor: pointer;
+        }
+    </style>
+</body>
+</html>

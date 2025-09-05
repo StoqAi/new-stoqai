@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Categorias</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <span class="logo-icon">◆</span>
+            <span class="logo-text">StoqAi</span>
+        </div>
+        <div class="navbar-center">
+            <a href="#" class="nav-link">Dashboard</a>
+            <a href="{{ url_for('index') }}" class="nav-link">Produtos</a>
+            <a href="{{ url_for('categorias') }}" class="nav-link active">Categorias</a>
+            <a href="{{ url_for('fornecedores') }}" class="nav-link">Fornecedores</a>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>Categorias</h1>
+        <p class="subtitle">Gerencie as categorias dos produtos.</p>
+        <div style="display: flex; gap: 12px; margin-bottom: 18px;">
+            <a href="{{ url_for('nova_categoria') }}" class="btn" style="width: 120px; height: 22px;">Cadastrar</a>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nome</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in categorias %}
+                <tr>
+                    <td>{{ c.IdCategoria }}</td>
+                    <td>{{ c.Nome }}</td>
+                    <td>
+                        <div style="display: flex; gap: 8px;">
+                            <a href="{{ url_for('editar_categoria', id=c.IdCategoria) }}" class="btn" style="height: auto; font-size: 16px;">Editar</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
