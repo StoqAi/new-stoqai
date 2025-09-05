@@ -19,6 +19,12 @@
     <div class="container">
         <h1>Produtos</h1>
         <p class="subtitle">Gerencie seu estoque de forma eficiente e intuitiva.</p>
+        {% set produtos_baixo_estoque = produtos | selectattr('Quantidade', 'lt', 10) | list %}
+        {% if produtos_baixo_estoque|length > 0 %}
+        <div class="estoque-alerta">
+            Atenção: Existem produtos com estoque baixo (menos de 10 unidades). Reabasteça para evitar rupturas!
+        </div>
+        {% endif %}
         <div style="display: flex; gap: 12px; margin-bottom: 18px; width: 100%; justify-content: flex-start;">
             <a href="{{ url_for('cadastrar') }}" class="btn" style="width: 120px; height: 22px;">Cadastrar</a>
             <button id="btn-gerenciar" class="btn" style="width: 120px; height: 36px;">Gerenciar</button>
@@ -37,7 +43,7 @@
             </thead>
             <tbody>
                 {% for p in produtos %}
-                <tr data-codigo="{{ p.IdProduto }}">
+                <tr data-codigo="{{ p.IdProduto }}" class="{% if p.Quantidade < 10 %}estoque-baixo{% endif %}">
                     <td>{{ p.IdProduto }}</td>
                     <td>{{ p.Nome }}</td>
                     <td>{{ p.IdCategoria }}</td>
@@ -84,6 +90,23 @@
         }
         #produtos-tabela tr[data-codigo] {
             cursor: pointer;
+        }
+        .estoque-baixo {
+            border-left: 5px solid #e53935 !important;
+            background: #fff5f5 !important;
+            transition: background 0.2s;
+        }
+        .estoque-baixo:hover, .estoque-baixo.selected-row, .selected-row.estoque-baixo {
+            background: #ffeaea !important;
+        }
+        .estoque-alerta {
+            color: #b91c1c;
+            background: #fff1f2;
+            border-left: 5px solid #e53935;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 18px;
+            font-weight: bold;
         }
     </style>
 </body>
