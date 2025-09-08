@@ -1,3 +1,2 @@
-streamlit
 flask
 mysql-connector-python

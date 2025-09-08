@@ -9,7 +9,7 @@ def conectar_mysql():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        password="Thor2019@sql",
+        password="fiap",
         database="estoque_loja"
     )
 
@@ -20,11 +20,16 @@ def index():
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
         SELECT
-            Produto.IdProduto, Produto.Nome, Produto.Preco, Produto.Descricao,
+            Produto.IdProduto, Produto.Nome,
+            Categoria.Nome AS NomeCategoria,
+            Fornecedor.Nome AS NomeFornecedor,
+            Produto.Preco, Produto.Descricao,
             Produto.IdCategoria, Produto.IdFornecedor,
             Estoque.Quantidade
         FROM Produto
         JOIN Estoque ON Produto.IdProduto = Estoque.IdProduto
+        LEFT JOIN Categoria ON Produto.IdCategoria = Categoria.IdCategoria
+        LEFT JOIN Fornecedor ON Produto.IdFornecedor = Fornecedor.IdFornecedor
     """)
     produtos = cursor.fetchall()
     conn.close()
@@ -167,13 +172,16 @@ def fornecedores():
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
         SELECT Fornecedor.IdFornecedor, Fornecedor.Nome, Fornecedor.CNPJ, 
-               Contato.Telefone, Contato.Email
+               Contato.Telefone, Contato.Email,
+               Endereco.NomeRua, Endereco.Num, Endereco.CEP, Endereco.Bairro, Endereco.Cidade, Endereco.Estado
         FROM Fornecedor
         LEFT JOIN Contato ON Fornecedor.IdContato = Contato.IdContato
+        LEFT JOIN Endereco ON Fornecedor.IdEndereco = Endereco.IdEndereco
     """)
     fornecedores = cursor.fetchall()
     conn.close()
     return render_template('fornecedores.html', fornecedores=fornecedores)
+
 
 @app.route('/fornecedores/novo', methods=['GET', 'POST'])
 def novo_fornecedor():
@@ -183,12 +191,27 @@ def novo_fornecedor():
         cnpj = request.form.get('cnpj')
         telefone = request.form.get('telefone')
         email = request.form.get('email')
+        rua = request.form.get('rua')
+        numero = request.form.get('numero')
+        cep = request.form.get('cep')
+        complemento = request.form.get('complemento')
+        bairro = request.form.get('bairro')
+        cidade = request.form.get('cidade')
+        estado = request.form.get('estado')
         try:
             conn = conectar_mysql()
             cursor = conn.cursor()
+            # Insere endereço
+            cursor.execute(
+                "INSERT INTO Endereco (NomeRua, Num, CEP, Complemento, Bairro, Cidade, Estado) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (rua, numero, cep, complemento, bairro, cidade, estado)
+            )
+            id_endereco = cursor.lastrowid
+            # Insere contato
             cursor.execute("INSERT INTO Contato (Telefone, Email) VALUES (%s, %s)", (telefone, email))
             id_contato = cursor.lastrowid
-            cursor.execute("INSERT INTO Fornecedor (Nome, CNPJ, IdContato) VALUES (%s, %s, %s)", (nome, cnpj, id_contato))
+            # Insere fornecedor com FK de endereço e contato
+            cursor.execute("INSERT INTO Fornecedor (Nome, CNPJ, IdContato, IdEndereco) VALUES (%s, %s, %s, %s)", (nome, cnpj, id_contato, id_endereco))
             conn.commit()
             conn.close()
             return redirect(url_for('fornecedores'))
@@ -202,9 +225,12 @@ def editar_fornecedor(id):
     cursor = conn.cursor(dictionary=True)
     cursor.execute("""
         SELECT Fornecedor.IdFornecedor, Fornecedor.Nome, Fornecedor.CNPJ, 
-               Contato.Telefone, Contato.Email, Fornecedor.IdContato
+               Contato.Telefone, Contato.Email, Fornecedor.IdContato,
+               Endereco.IdEndereco, Endereco.NomeRua as Rua, Endereco.Num as Numero, Endereco.CEP, 
+               Endereco.Complemento, Endereco.Bairro, Endereco.Cidade, Endereco.Estado
         FROM Fornecedor
         LEFT JOIN Contato ON Fornecedor.IdContato = Contato.IdContato
+        LEFT JOIN Endereco ON Fornecedor.IdEndereco = Endereco.IdEndereco
         WHERE Fornecedor.IdFornecedor = %s
     """, (id,))
     fornecedor = cursor.fetchone()
@@ -214,10 +240,21 @@ def editar_fornecedor(id):
         cnpj = request.form.get('cnpj')
         telefone = request.form.get('telefone')
         email = request.form.get('email')
+        rua = request.form.get('rua')
+        numero = request.form.get('numero')
+        cep = request.form.get('cep')
+        complemento = request.form.get('complemento')
+        bairro = request.form.get('bairro')
+        cidade = request.form.get('cidade')
+        estado = request.form.get('estado')
         try:
             cursor2 = conn.cursor()
             cursor2.execute("UPDATE Fornecedor SET Nome=%s, CNPJ=%s WHERE IdFornecedor=%s", (nome, cnpj, id))
             cursor2.execute("UPDATE Contato SET Telefone=%s, Email=%s WHERE IdContato=%s", (telefone, email, fornecedor['IdContato']))
+            cursor2.execute(
+                "UPDATE Endereco SET NomeRua=%s, Num=%s, CEP=%s, Complemento=%s, Bairro=%s, Cidade=%s, Estado=%s WHERE IdEndereco=%s",
+                (rua, numero, cep, complemento, bairro, cidade, estado, fornecedor['IdEndereco'])
+            )
             conn.commit()
             cursor2.close()
             conn.close()

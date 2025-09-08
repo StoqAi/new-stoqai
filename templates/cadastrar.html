@@ -6,6 +6,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+        <nav class="navbar">
+        <div class="navbar-left">
+            <span class="logo-icon">◆</span>
+            <span class="logo-text">StoqAi</span>
+        </div>
+        <div class="navbar-center">
+            <a href="{{ url_for('index') }}" class="nav-link active">Produtos</a>
+            <a href="{{ url_for('categorias') }}" class="nav-link">Categorias</a>
+            <a href="{{ url_for('fornecedores') }}" class="nav-link">Fornecedores</a>
+        </div>
+    </nav>
     <div class="container">
         <h1>Cadastrar Produto</h1>
         <p style="color:#555; margin-bottom:18px;">Preencha os campos abaixo para adicionar um novo produto ao estoque.</p>
@@ -40,7 +51,7 @@
                 <textarea id="descricao" name="descricao" rows="2"></textarea>
             </div>
             <div class="form-group">
-                <label for="id_fornecedor">Fornecedor</label>
+                <label for="id_fornecedor">Fornecedor: <span style="color:#b71c1c">*</span></label>
                 <select id="id_fornecedor" name="id_fornecedor">
                     <option value="">Selecione...</option>
                     {% for forn in fornecedores %}

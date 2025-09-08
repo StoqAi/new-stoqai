@@ -34,8 +34,8 @@
                 <tr>
                     <th>Código</th>
                     <th>Nome</th>
-                    <th>ID Categoria</th>
-                    <th>ID Fornecedor</th>
+                    <th>Categoria</th>
+                    <th>Fornecedor</th>
                     <th>Quantidade</th>
                     <th>Preço</th>
                     <th>Ações</th>
@@ -46,8 +46,8 @@
                 <tr data-codigo="{{ p.IdProduto }}" class="{% if p.Quantidade < 10 %}estoque-baixo{% endif %}">
                     <td>{{ p.IdProduto }}</td>
                     <td>{{ p.Nome }}</td>
-                    <td>{{ p.IdCategoria }}</td>
-                    <td>{{ p.IdFornecedor }}</td>
+                    <td>{{ p.NomeCategoria }}</td>
+                    <td>{{ p.NomeFornecedor }}</td>
                     <td>{{ p.Quantidade }}</td>
                     <td>R$ {{ "%.2f"|format(p.Preco) }}</td>
                     <td>

@@ -12,7 +12,7 @@
         </div>
         <div class="navbar-center">
             <a href="{{ url_for('index') }}" class="nav-link">Produtos</a>
-            <a href="#" class="nav-link">Categorias</a>
+            <a href="{{ url_for('categorias') }}" class="nav-link">Categorias</a>
             <a href="{{ url_for('fornecedores') }}" class="nav-link active">Fornecedores</a>
         </div>
     </nav>
@@ -25,20 +25,46 @@
         {% endif %}
         <form method="POST">
             <div class="form-group">
-                <label for="nome">Nome:</label>
+                <label for="nome">Nome: <span style="color:#b71c1c">*</span></label>
                 <input type="text" id="nome" name="nome" value="{{ fornecedor.Nome if fornecedor else '' }}" required>
             </div>
             <div class="form-group">
-                <label for="cnpj">CNPJ:</label>
+                <label for="cnpj">CNPJ: <span style="color:#b71c1c">*</span></label>
                 <input type="text" id="cnpj" name="cnpj" value="{{ fornecedor.CNPJ if fornecedor else '' }}" required>
             </div>
             <div class="form-group">
-                <label for="telefone">Telefone:</label>
+                <label for="telefone">Telefone: <span style="color:#b71c1c">*</span></label>
                 <input type="text" id="telefone" name="telefone" value="{{ fornecedor.Telefone if fornecedor else '' }}">
             </div>
             <div class="form-group">
-                <label for="email">Email:</label>
+                <label for="email">Email: <span style="color:#b71c1c">*</span></label>
                 <input type="email" id="email" name="email" value="{{ fornecedor.Email if fornecedor else '' }}">
+            </div>
+            <hr style="margin: 24px 0;">
+            <h3>Endereço</h3>
+            <div class="form-group">
+                <label for="rua">Rua: <span style="color:#b71c1c">*</span></label>
+                <input type="text" id="rua" name="rua" value="{{ fornecedor.Rua if fornecedor else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="numero">Número: <span style="color:#b71c1c">*</span></label>
+                <input type="text" id="numero" name="numero" value="{{ fornecedor.Numero if fornecedor else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="cep">CEP: <span style="color:#b71c1c">*</span></label>
+                <input type="text" id="cep" name="cep" value="{{ fornecedor.CEP if fornecedor else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="bairro">Bairro: <span style="color:#b71c1c">*</span></label>
+                <input type="text" id="bairro" name="bairro" value="{{ fornecedor.Bairro if fornecedor else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="cidade">Cidade: <span style="color:#b71c1c">*</span></label>
+                <input type="text" id="cidade" name="cidade" value="{{ fornecedor.Cidade if fornecedor else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="estado">Estado: <span style="color:#b71c1c">*</span></label>
+                <input type="text" id="estado" name="estado" maxlength="2" value="{{ fornecedor.Estado if fornecedor else '' }}" required>
             </div>
             <div style="display: flex; gap: 16px; margin-top: 18px;">
                 <button type="submit" class="btn">
@@ -57,5 +83,38 @@
             </div>
         </form>
     </div>
+    <script>
+    const cepInput = document.getElementById('cep');
+    cepInput.addEventListener('blur', function() {
+        const cep = this.value.replace(/\D/g, '');
+        if (cep.length === 8) {
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.erro) {
+                        document.getElementById('rua').value = data.logradouro || '';
+                        document.getElementById('bairro').value = data.bairro || '';
+                        document.getElementById('cidade').value = data.localidade || '';
+                        document.getElementById('estado').value = data.uf || '';
+                        if (data.complemento) {
+                            document.getElementById('complemento').value = data.complemento;
+                        }
+                    }
+                });
+        }
+    });
+
+    cepInput.addEventListener('input', function() {
+        if (this.value.trim() === '') {
+            document.getElementById('rua').value = '';
+            document.getElementById('bairro').value = '';
+            document.getElementById('cidade').value = '';
+            document.getElementById('estado').value = '';
+            if (document.getElementById('complemento')) {
+                document.getElementById('complemento').value = '';
+            }
+        }
+    });
+</script>
 </body>
 </html>
