@@ -4,6 +4,12 @@
     <title>Categorias</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+<script>
+    // Se estiver em uma rota diferente de "/", mas quer mostrar "/" na barra de endereços:
+    if (window.location.pathname !== "/") {
+        history.replaceState({}, '', '/');
+    }
+</script>
 <body>
     <nav class="navbar">
         <div class="navbar-left">
