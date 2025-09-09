@@ -26,7 +26,7 @@ CREATE TABLE Usuario (
 
 CREATE TABLE Cliente (
     IdCliente INT PRIMARY KEY AUTO_INCREMENT,
-    Nome VARCHAR(100) NOT NULL,
+    Nome_cliente VARCHAR(100) NOT NULL,
     CPF CHAR(11) NOT NULL UNIQUE,
     IdContato INT,
     IdEndereco INT,
@@ -36,7 +36,7 @@ CREATE TABLE Cliente (
 
 CREATE TABLE Funcionario (
     IdFunc INT PRIMARY KEY AUTO_INCREMENT,
-    Nome VARCHAR(100) NOT NULL,
+    Nome_func VARCHAR(100) NOT NULL,
     CPF CHAR(11) NOT NULL UNIQUE,
     IdEndereco INT,
     IdContato INT,
@@ -51,13 +51,13 @@ CREATE TABLE Funcionario (
 
 CREATE TABLE Categoria (
     IdCategoria INT PRIMARY KEY AUTO_INCREMENT,
-    Nome VARCHAR(50) NOT NULL UNIQUE
+    Nome_cat VARCHAR(50) NOT NULL UNIQUE
 );
 
 CREATE TABLE Fornecedor (
     IdFornecedor INT PRIMARY KEY AUTO_INCREMENT,
     CNPJ CHAR(14) NOT NULL UNIQUE,
-    Nome VARCHAR(100) NOT NULL,
+    Nome_forn VARCHAR(100) NOT NULL,
     IdContato INT,
     IdEndereco INT,
     FOREIGN KEY (IdContato) REFERENCES Contato(IdContato),
@@ -66,7 +66,7 @@ CREATE TABLE Fornecedor (
 
 CREATE TABLE Produto (
     IdProduto INT PRIMARY KEY AUTO_INCREMENT,
-    Nome VARCHAR(100) NOT NULL,
+    Nome_prod VARCHAR(100) NOT NULL,
     Preco DECIMAL(10,2) NOT NULL,
     Descricao TEXT,
     IdCategoria INT,
@@ -82,35 +82,48 @@ CREATE TABLE Estoque (
     FOREIGN KEY (IdProduto) REFERENCES Produto(IdProduto)
 );
 
-
 show tables;
 
--- Tabela Endereco
-SELECT * FROM Endereco;
+DELIMITER $$
 
--- Tabela Contato
-SELECT * FROM Contato;
+CREATE PROCEDURE ver_todas_tabelas()
+BEGIN
+    SELECT * FROM Endereco;
+    SELECT * FROM Contato;
+    SELECT * FROM Usuario;
+    SELECT * FROM Cliente;
+    SELECT * FROM Funcionario;
+    SELECT * FROM Categoria;
+    SELECT * FROM Fornecedor;
+    SELECT * FROM Produto;
+    SELECT * FROM Estoque;
+END $$
 
--- Tabela Usuario
-SELECT * FROM Usuario;
+DELIMITER ;
 
--- Tabela Cliente
-SELECT * FROM Cliente;
+-- PARA FUNCIONAR RODE
+-- CALL ver_todas_tabelas();
 
--- Tabela Funcionario
-SELECT * FROM Funcionario;
+DELIMITER $$
 
--- Tabela Categoria
-SELECT * FROM Categoria;
+CREATE PROCEDURE dropar_todas_tabelas()
+BEGIN
+    DROP TABLE IF EXISTS Endereco;
+    DROP TABLE IF EXISTS Contato;
+    DROP TABLE IF EXISTS Usuario;
+    DROP TABLE IF EXISTS Cliente;
+    DROP TABLE IF EXISTS Funcionario;
+    DROP TABLE IF EXISTS Categoria;
+    DROP TABLE IF EXISTS Fornecedor;
+    DROP TABLE IF EXISTS Produto;
+    DROP TABLE IF EXISTS Estoque;
+END $$
 
--- Tabela Fornecedor
-SELECT * FROM Fornecedor;
+DELIMITER ;
 
--- Tabela Produto
-SELECT * FROM Produto;
+-- PARA FUNCIONAR RODE
+-- CALL dropar_todas_tabelas();
 
--- Tabela Estoque
-SELECT * FROM Estoque;
 
 -- População da tabela: Contato
 INSERT INTO Contato (IdContato, Telefone, Email) VALUES
@@ -163,7 +176,7 @@ INSERT INTO Usuario (IdUser, Login, Senha) VALUES
 (5, 'sandra.regina', 'senha121');
 
 -- População da tabela: Cliente
-INSERT INTO Cliente (IdCliente, Nome, CPF, IdContato, IdEndereco) VALUES
+INSERT INTO Cliente (IdCliente, Nome_cliente, CPF, IdContato, IdEndereco) VALUES
 (1, 'João Silva', '11122233344', 1, 1),
 (2, 'Maria Santos', '22233344455', 2, 2),
 (3, 'Pedro Almeida', '33344455566', 3, 3),
@@ -171,7 +184,7 @@ INSERT INTO Cliente (IdCliente, Nome, CPF, IdContato, IdEndereco) VALUES
 (5, 'Carlos Roberto', '55566677788', 5, 5);
 
 -- População da tabela: Funcionario
-INSERT INTO Funcionario (IdFunc, Nome, CPF, IdEndereco, IdContato, Cargo, Salario, DataAdmissao, IdUser) VALUES
+INSERT INTO Funcionario (IdFunc, Nome_func, CPF, IdEndereco, IdContato, Cargo, Salario, DataAdmissao, IdUser) VALUES
 (1, 'Fernanda Lima', '66677788899', 6, 6, 'Gerente', 8000.00, '2020-01-15', 1),
 (2, 'Rafael Costa', '77788899900', 7, 7, 'Analista de Vendas', 4500.00, '2021-03-20', 2),
 (3, 'Juliana Paes', '88899900011', 8, 8, 'Desenvolvedor', 6000.00, '2019-08-10', 3),
@@ -179,7 +192,7 @@ INSERT INTO Funcionario (IdFunc, Nome, CPF, IdEndereco, IdContato, Cargo, Salari
 (5, 'Sandra Regina', '00011122233', 10, 10, 'Coordenador', 7500.00, '2018-11-25', 5);
 
 -- População da tabela: Fornecedor
-INSERT INTO Fornecedor (IdFornecedor, CNPJ, Nome, IdContato, IdEndereco) VALUES
+INSERT INTO Fornecedor (IdFornecedor, CNPJ, Nome_forn, IdContato, IdEndereco) VALUES
 (1, '00920731000902', 'Delta Suprimentos', 11, 11),
 (2, '12345678000190', 'Alpha Distribuidora', 12, 12),
 (3, '98765432000110', 'Beta Importadora', 13, 13),
@@ -187,7 +200,7 @@ INSERT INTO Fornecedor (IdFornecedor, CNPJ, Nome, IdContato, IdEndereco) VALUES
 (5, '77889900000133', 'Omega Comércio', 15, 15);
 
 -- População da tabela: Categoria
-INSERT INTO Categoria (IdCategoria, Nome) VALUES
+INSERT INTO Categoria (IdCategoria, Nome_cat) VALUES
 (1, 'Eletrônicos'),
 (2, 'Alimentos'),
 (3, 'Limpeza'),
@@ -196,7 +209,7 @@ INSERT INTO Categoria (IdCategoria, Nome) VALUES
 (6, 'Beleza');
 
 -- População da tabela: Produto
-INSERT INTO Produto (IdProduto, Nome, Preco, Descricao, IdCategoria, IdFornecedor) VALUES
+INSERT INTO Produto (IdProduto, Nome_prod, Preco, Descricao, IdCategoria, IdFornecedor) VALUES
 (1, 'Smartphone X1', 1500.00, 'Smartphone de última geração com 128GB', 1, 3),
 (2, 'Arroz Tipo 1 (5kg)', 25.00, 'Arroz branco tipo 1, pacote com 5kg', 2, 4),
 (3, 'Detergente Líquido (500ml)', 4.00, 'Detergente líquido para louças', 3, 2),
