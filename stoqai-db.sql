@@ -41,7 +41,7 @@ CREATE TABLE Funcionario (
     IdEndereco INT,
     IdContato INT,
     Cargo VARCHAR(50) NOT NULL,
-    Salario DECIMAL(10,2) NOT NULL,
+    Salario DECIMAL(10,2) NOT NULL CHECK (Quantidade >= 0),
     DataAdmissao DATE NOT NULL,
     IdUser INT,
     FOREIGN KEY (IdEndereco) REFERENCES Endereco(IdEndereco),
@@ -67,7 +67,7 @@ CREATE TABLE Fornecedor (
 CREATE TABLE Produto (
     IdProduto INT PRIMARY KEY AUTO_INCREMENT,
     Nome VARCHAR(100) NOT NULL,
-    Preco DECIMAL(10,2) NOT NULL,
+    Preco DECIMAL(10,2) NOT NULL CHECK (Quantidade >= 0),
     Descricao TEXT,
     IdCategoria INT,
     IdFornecedor INT,
@@ -78,7 +78,7 @@ CREATE TABLE Produto (
 CREATE TABLE Estoque (
     IdEstoque INT PRIMARY KEY AUTO_INCREMENT,
     IdProduto INT NOT NULL,
-    Quantidade INT NOT NULL DEFAULT 0,
+    Quantidade INT NOT NULL DEFAULT 0 CHECK (Quantidade >= 0) ,
     FOREIGN KEY (IdProduto) REFERENCES Produto(IdProduto)
 );
 
