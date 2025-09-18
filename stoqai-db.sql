@@ -26,7 +26,7 @@ CREATE TABLE Usuario (
 
 CREATE TABLE Cliente (
     IdCliente INT PRIMARY KEY AUTO_INCREMENT,
-    Nome_cliente VARCHAR(100) NOT NULL,
+    Nome VARCHAR(100) NOT NULL,
     CPF CHAR(11) NOT NULL UNIQUE,
     IdContato INT,
     IdEndereco INT,
@@ -36,7 +36,7 @@ CREATE TABLE Cliente (
 
 CREATE TABLE Funcionario (
     IdFunc INT PRIMARY KEY AUTO_INCREMENT,
-    Nome_func VARCHAR(100) NOT NULL,
+    Nome VARCHAR(100) NOT NULL,
     CPF CHAR(11) NOT NULL UNIQUE,
     IdEndereco INT,
     IdContato INT,
@@ -51,13 +51,13 @@ CREATE TABLE Funcionario (
 
 CREATE TABLE Categoria (
     IdCategoria INT PRIMARY KEY AUTO_INCREMENT,
-    Nome_cat VARCHAR(50) NOT NULL UNIQUE
+    Nome VARCHAR(50) NOT NULL UNIQUE
 );
 
 CREATE TABLE Fornecedor (
     IdFornecedor INT PRIMARY KEY AUTO_INCREMENT,
     CNPJ CHAR(14) NOT NULL UNIQUE,
-    Nome_forn VARCHAR(100) NOT NULL,
+    Nome VARCHAR(100) NOT NULL,
     IdContato INT,
     IdEndereco INT,
     FOREIGN KEY (IdContato) REFERENCES Contato(IdContato),
@@ -66,7 +66,7 @@ CREATE TABLE Fornecedor (
 
 CREATE TABLE Produto (
     IdProduto INT PRIMARY KEY AUTO_INCREMENT,
-    Nome_prod VARCHAR(100) NOT NULL,
+    Nome VARCHAR(100) NOT NULL,
     Preco DECIMAL(10,2) NOT NULL,
     Descricao TEXT,
     IdCategoria INT,
