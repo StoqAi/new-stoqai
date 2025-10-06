@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promoções - StoqAi</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <span class="logo-icon">◆</span>
+            <span class="logo-text">StoqAi</span>
+        </div>
+        <div class="navbar-center">
+        <a href="{{ url_for('index') }}" class="active">Produtos</a>    
+        <a href="{{ url_for('categorias') }}">Categorias</a>
+        <a href="{{ url_for('fornecedores') }}">Fornecedores</a>
+        <a href="{{ url_for('vendas') }}">Vendas</a>
+        <a href="{{ url_for('promocoes') }}">Promoções</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header-actions">
+            <h1>Promoções</h1>
+            <p class="subtitle">Gerencie suas promoções de forma eficiente e intuitiva.</p>
+            <div style="display: flex; gap: 12px; margin-bottom: 18px; width: 100%; justify-content: flex-start;">
+            <a href="{{ url_for('nova_promocao') }}" class="btn" style="width: 120px; height: 22px;">Cadastrar</a>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Tipo</th>
+                        <th>Valor</th>
+                        <th>Data Início</th>
+                        <th>Data Fim</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for promocao in promocoes %}
+                    <tr>
+                        <td>{{ promocao.Nome }}</td>
+                        <td>{{ promocao.TipoDesconto }}</td>
+                        <td>
+                            {% if promocao.TipoDesconto == 'Percentual' %}
+                                {{ "%.1f"|format(promocao.ValorDesconto) }}%
+                            {% else %}
+                                R$ {{ "%.2f"|format(promocao.ValorDesconto) }}
+                            {% endif %}
+                        </td>
+                        <td>{{ promocao.DataInicio.strftime('%d/%m/%Y') if promocao.DataInicio else '' }}</td>
+                        <td>{{ promocao.DataFim.strftime('%d/%m/%Y') if promocao.DataFim else '' }}</td>
+                        <td>
+                            {% if promocao.Ativa %}
+                                <span class="status ativa">Ativa</span>
+                            {% else %}
+                                <span class="status inativa">Inativa</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions">
+                            <a href="{{ url_for('editar_promocao', id=promocao.IdPromocao) }}" class="btn-edit">Editar</a>
+                            <form method="POST" action="{{ url_for('excluir_promocao', id=promocao.IdPromocao) }}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir esta promoção?')">
+                                <button type="submit" class="btn-delete">Excluir</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="no-data">Nenhuma promoção cadastrada</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Atualizar status das promoções baseado na data atual
+        document.addEventListener('DOMContentLoaded', function() {
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0); // Zerar horas para comparação apenas de data
+            
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(function(row) {
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 6) {
+                    const dataInicio = cells[3].textContent.trim();
+                    const dataFim = cells[4].textContent.trim();
+                    const statusCell = cells[5];
+                    
+                    if (dataInicio && dataFim && dataInicio !== '' && dataFim !== '') {
+                        const [diaInicio, mesInicio, anoInicio] = dataInicio.split('/');
+                        const [diaFim, mesFim, anoFim] = dataFim.split('/');
+                        
+                        const dataInicioObj = new Date(anoInicio, mesInicio - 1, diaInicio);
+                        const dataFimObj = new Date(anoFim, mesFim - 1, diaFim);
+                        
+                        const statusSpan = statusCell.querySelector('.status');
+                        if (statusSpan) {
+                            if (dataFimObj < hoje) {
+                                statusSpan.className = 'status vencida';
+                                statusSpan.textContent = 'Vencida';
+                            } else if (dataInicioObj > hoje) {
+                                statusSpan.className = 'status pendente';
+                                statusSpan.textContent = 'Aguardando';
+                            } else if (statusSpan.textContent === 'Ativa') {
+                                statusSpan.className = 'status ativa';
+                                statusSpan.textContent = 'Ativa';
+                            } else {
+                                statusSpan.className = 'status inativa';
+                                statusSpan.textContent = 'Inativa';
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -364,3 +364,87 @@ tr:nth-child(even) {
         width: 100%;
     }
 }
+
+/* Status específicos para vendas e promoções */
+.status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status.concluida, .status.ativa {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status.cancelada, .status.inativa {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status.vencida {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status.pendente {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+/* Estilos para formulário de venda */
+.item-venda {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.form-row .form-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.remove-item {
+    margin-left: 10px;
+    white-space: nowrap;
+}
+
+/* Responsividade para formulários de venda */
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .form-row .form-group {
+        min-width: auto;
+    }
+}
+
+/* Estilos para recibo de impressão */
+@media print {
+    .navbar, .btn-primary, .btn-secondary, .btn-action, .btn-delete {
+        display: none !important;
+    }
+    
+    body {
+        margin: 0;
+        color: #000;
+    }
+    
+    .container {
+        max-width: none;
+        padding: 10px;
+    }
+}

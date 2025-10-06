@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Venda - StoqAi</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <span class="logo-icon">◆</span>
+            <span class="logo-text">StoqAi</span>
+        </div>
+        <div class="navbar-center">
+        <a href="{{ url_for('index') }}" class="active">Produtos</a>    
+        <a href="{{ url_for('categorias') }}">Categorias</a>
+        <a href="{{ url_for('fornecedores') }}">Fornecedores</a>
+        <a href="{{ url_for('vendas') }}">Vendas</a>
+        <a href="{{ url_for('promocoes') }}">Promoções</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Nova Venda</h1>
+
+        {% if erro %}
+        <div class="error-message">{{ erro }}</div>
+        {% endif %}
+
+        <form method="POST" class="form-container">
+            <div class="form-group">
+                <label for="id_cliente">Cliente (Opcional):</label>
+                <select name="id_cliente" id="id_cliente">
+                    <option value="">Cliente Avulso</option>
+                    {% for cliente in clientes %}
+                    <option value="{{ cliente.IdCliente }}">{{ cliente.Nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Seção de Promoções -->
+            {% if promocoes %}
+            <div class="form-group">
+                <label for="id_promocao">Promoção (Opcional):</label>
+                <select name="id_promocao" id="id_promocao" onchange="calcularDesconto()">
+                    <option value="">Nenhuma promoção</option>
+                    {% for promocao in promocoes %}
+                    <option value="{{ promocao.IdPromocao }}" 
+                            data-tipo="{{ promocao.TipoDesconto }}" 
+                            data-valor="{{ promocao.ValorDesconto }}">
+                        {{ promocao.Nome }} - 
+                        {% if promocao.TipoDesconto == 'Percentual' %}
+                            {{ promocao.ValorDesconto }}%
+                        {% else %}
+                            R$ {{ "%.2f"|format(promocao.ValorDesconto) }}
+                        {% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <h3>Produtos da Venda</h3>
+            <div id="itens-venda">
+                <div class="item-venda">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Produto:</label>
+                            <select name="produto_id[]" required onchange="calcularDesconto()">
+                                <option value="">Selecione um produto</option>
+                                {% for produto in produtos %}
+                                <option value="{{ produto.IdProduto }}" data-preco="{{ produto.Preco }}" data-estoque="{{ produto.Quantidade }}">
+                                    {{ produto.Nome }} - R$ {{ "%.2f"|format(produto.Preco) }} (Estoque: {{ produto.Quantidade }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Quantidade:</label>
+                            <input type="number" name="quantidade[]" min="1" required onchange="calcularDesconto()">
+                        </div>
+                        <div class="form-group">
+                            <label>Desconto Manual (R$):</label>
+                            <input type="number" name="desconto_produto[]" step="0.01" min="0" value="0" onchange="calcularDesconto()">
+                        </div>
+                        <button type="button" class="btn-delete remove-item">Remover</button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" id="add-item" class="btn-secondary">+ Adicionar Produto</button>
+
+            <!-- Campo oculto para enviar o desconto geral -->
+            <input type="hidden" name="desconto_geral" id="desconto_geral" value="0">
+
+            <!-- Resumo da Venda -->
+            <h3>Resumo da venda</h3>
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <p><strong>Valor Total:</strong> R$ <span id="valor-total">0.00</span></p>
+                <p><strong>Desconto Total:</strong> R$ <span id="desconto-total">0.00</span> 
+                   <span id="detalhes-desconto" style="font-size: 0.9em; color: #666;"></span>
+                </p>
+                <p style="font-size: 1.2em; color: #2c5aa0;"><strong>Valor Final:</strong> R$ <span id="valor-final">0.00</span></p>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Processar Venda</button>
+                <a href="{{ url_for('vendas') }}" class="btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function calcularDesconto() {
+            let valorTotal = 0;
+            let descontoManualTotal = 0;
+            let descontoPromocao = 0;
+            let nomePromocao = "";
+            
+            // Calcular valor total dos produtos e descontos manuais
+            const itens = document.querySelectorAll('.item-venda');
+            itens.forEach(item => {
+                const select = item.querySelector('select[name="produto_id[]"]');
+                const quantidade = parseFloat(item.querySelector('input[name="quantidade[]"]').value) || 0;
+                const descontoManual = parseFloat(item.querySelector('input[name="desconto_produto[]"]').value) || 0;
+                
+                if (select.value && quantidade > 0) {
+                    const preco = parseFloat(select.options[select.selectedIndex].dataset.preco) || 0;
+                    valorTotal += preco * quantidade;
+                    descontoManualTotal += descontoManual;
+                }
+            });
+            
+            // Verificar se há promoção selecionada
+            const promocaoSelect = document.getElementById('id_promocao');
+            if (promocaoSelect && promocaoSelect.value) {
+                const opcao = promocaoSelect.options[promocaoSelect.selectedIndex];
+                const tipoDesconto = opcao.dataset.tipo;
+                const valorDesconto = parseFloat(opcao.dataset.valor) || 0;
+                nomePromocao = opcao.text;
+                
+                if (tipoDesconto === 'Percentual') {
+                    descontoPromocao = (valorTotal * valorDesconto) / 100;
+                } else if (tipoDesconto === 'Valor') {
+                    descontoPromocao = valorDesconto;
+                }
+            }
+            
+            // Atualizar campo oculto de desconto geral
+            document.getElementById('desconto_geral').value = descontoPromocao.toFixed(2);
+            
+            // Calcular totais finais
+            const descontoTotalFinal = descontoManualTotal + descontoPromocao;
+            const valorFinal = Math.max(0, valorTotal - descontoTotalFinal);
+            
+            // Criar detalhes do desconto
+            let detalhesDesconto = "";
+            if (descontoManualTotal > 0 && descontoPromocao > 0) {
+                detalhesDesconto = `(Manual: R$ ${descontoManualTotal.toFixed(2)} + Promoção: R$ ${descontoPromocao.toFixed(2)})`;
+            } else if (descontoManualTotal > 0) {
+                detalhesDesconto = "(Desconto manual)";
+            } else if (descontoPromocao > 0) {
+                detalhesDesconto = `(${nomePromocao.split(' - ')[0]})`;
+            }
+            
+            // Atualizar resumo
+            document.getElementById('valor-total').textContent = valorTotal.toFixed(2);
+            document.getElementById('desconto-total').textContent = descontoTotalFinal.toFixed(2);
+            document.getElementById('valor-final').textContent = valorFinal.toFixed(2);
+            document.getElementById('detalhes-desconto').textContent = detalhesDesconto;
+        }
+
+        document.getElementById('add-item').addEventListener('click', function() {
+            const container = document.getElementById('itens-venda');
+            const newItem = container.firstElementChild.cloneNode(true);
+            
+            const inputs = newItem.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.value = '';
+                if (input.getAttribute('onchange')) {
+                    input.onchange = calcularDesconto;
+                }
+            });
+            
+            container.appendChild(newItem);
+            updateRemoveButtons();
+            calcularDesconto();
+        });
+
+        function updateRemoveButtons() {
+            const removeButtons = document.querySelectorAll('.remove-item');
+            const items = document.querySelectorAll('.item-venda');
+            
+            removeButtons.forEach((button, index) => {
+                if (items.length > 1) {
+                    button.style.display = 'inline-block';
+                    button.onclick = function() {
+                        button.closest('.item-venda').remove();
+                        updateRemoveButtons();
+                        calcularDesconto();
+                    };
+                } else {
+                    button.style.display = 'none';
+                }
+            });
+        }
+
+        // Inicializar
+        updateRemoveButtons();
+        calcularDesconto();
+    </script>
+</body>
+</html>

@@ -41,7 +41,7 @@ CREATE TABLE Funcionario (
     IdEndereco INT,
     IdContato INT,
     Cargo VARCHAR(50) NOT NULL,
-    Salario DECIMAL(10,2) NOT NULL CHECK (Quantidade >= 0),
+    Salario DECIMAL(10,2) NOT NULL CHECK (Salario >= 0),
     DataAdmissao DATE NOT NULL,
     IdUser INT,
     FOREIGN KEY (IdEndereco) REFERENCES Endereco(IdEndereco),
@@ -67,7 +67,7 @@ CREATE TABLE Fornecedor (
 CREATE TABLE Produto (
     IdProduto INT PRIMARY KEY AUTO_INCREMENT,
     Nome VARCHAR(100) NOT NULL,
-    Preco DECIMAL(10,2) NOT NULL CHECK (Quantidade >= 0),
+    Preco DECIMAL(10,2) NOT NULL CHECK (Preco >= 0),
     Descricao TEXT,
     IdCategoria INT,
     IdFornecedor INT,
@@ -80,6 +80,51 @@ CREATE TABLE Estoque (
     IdProduto INT NOT NULL,
     Quantidade INT NOT NULL DEFAULT 0 CHECK (Quantidade >= 0) ,
     FOREIGN KEY (IdProduto) REFERENCES Produto(IdProduto)
+);
+
+-- Tabela para registrar vendas
+CREATE TABLE IF NOT EXISTS Venda (
+    IdVenda INT AUTO_INCREMENT PRIMARY KEY,
+    DataVenda DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ValorTotal DECIMAL(10,2) NOT NULL,
+    Desconto DECIMAL(10,2) DEFAULT 0.00,
+    ValorFinal DECIMAL(10,2) NOT NULL,
+    IdCliente INT,
+    Status ENUM('Concluída', 'Cancelada') DEFAULT 'Concluída',
+    FOREIGN KEY (IdCliente) REFERENCES Cliente(IdCliente)
+);
+
+-- Tabela para itens da venda
+CREATE TABLE IF NOT EXISTS ItemVenda (
+    IdItemVenda INT AUTO_INCREMENT PRIMARY KEY,
+    IdVenda INT,
+    IdProduto INT,
+    Quantidade INT NOT NULL,
+    PrecoUnitario DECIMAL(10,2) NOT NULL,
+    Subtotal DECIMAL(10,2) NOT NULL,
+    DescontoProduto DECIMAL(10,2) DEFAULT 0.00,
+    FOREIGN KEY (IdVenda) REFERENCES Venda(IdVenda),
+    FOREIGN KEY (IdProduto) REFERENCES Produto(IdProduto)
+);
+
+-- Tabela para promoções
+CREATE TABLE IF NOT EXISTS Promocao (
+    IdPromocao INT AUTO_INCREMENT PRIMARY KEY,
+    Nome VARCHAR(100) NOT NULL,
+    TipoDesconto ENUM('Percentual', 'Valor') NOT NULL,
+    ValorDesconto DECIMAL(10,2) NOT NULL,
+    DataInicio DATE NOT NULL,
+    DataFim DATE NOT NULL,
+    Ativa BOOLEAN DEFAULT TRUE
+);
+
+-- Tabela para vincular produtos a promoções
+CREATE TABLE IF NOT EXISTS ProdutoPromocao (
+    IdProdutoPromocao INT AUTO_INCREMENT PRIMARY KEY,
+    IdProduto INT,
+    IdPromocao INT,
+    FOREIGN KEY (IdProduto) REFERENCES Produto(IdProduto),
+    FOREIGN KEY (IdPromocao) REFERENCES Promocao(IdPromocao)
 );
 
 show tables;

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recibo - Venda #{{ venda.IdVenda }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h2>StoqAi</h2>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="{{ url_for('vendas') }}">← Voltar para Vendas</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1>RECIBO DE VENDA</h1>
+            <h2>StoqAi - Sistema de Gestão</h2>
+            <p><strong>Venda #{{ venda.IdVenda }}</strong></p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <p><strong>Data/Hora:</strong> {{ venda.DataVenda.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+            <p><strong>Cliente:</strong> {{ venda.NomeCliente or 'Cliente Avulso' }}</p>
+            {% if venda.CPF %}
+            <p><strong>CPF:</strong> {{ venda.CPF }}</p>
+            {% endif %}
+            {% if venda.Telefone %}
+            <p><strong>Telefone:</strong> {{ venda.Telefone }}</p>
+            {% endif %}
+            {% if venda.Email %}
+            <p><strong>Email:</strong> {{ venda.Email }}</p>
+            {% endif %}
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th>Qtd</th>
+                    <th>Preço Unit.</th>
+                    <th>Desconto</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in itens %}
+                <tr>
+                    <td>{{ item.NomeProduto }}</td>
+                    <td>{{ item.Quantidade }}</td>
+                    <td>R$ {{ "%.2f"|format(item.PrecoUnitario) }}</td>
+                    <td>R$ {{ "%.2f"|format(item.DescontoProduto) }}</td>
+                    <td>R$ {{ "%.2f"|format(item.Subtotal) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div style="margin-top: 20px; text-align: right; border-top: 2px solid #333; padding-top: 10px;">
+            <p><strong>Valor Total:</strong> R$ {{ "%.2f"|format(venda.ValorTotal) }}</p>
+            <p><strong>Desconto Geral:</strong> R$ {{ "%.2f"|format(venda.Desconto) }}</p>
+            <p style="font-size: 1.2em; color: #333;"><strong>VALOR FINAL:</strong> R$ {{ "%.2f"|format(venda.ValorFinal) }}</p>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;" class="no-print">
+            <button onclick="window.print()" class="btn-primary">Imprimir Recibo</button>
+            <a href="{{ url_for('vendas') }}" class="btn-secondary">Voltar</a>
+        </div>
+    </div>
+</body>
+</html>

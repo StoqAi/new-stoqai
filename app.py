@@ -2,6 +2,8 @@
 from flask import Flask, render_template, request, redirect, url_for
 import mysql.connector
 import re
+from datetime import datetime, date
+from decimal import Decimal
 
 
 # Inicializa a aplicação Flask
@@ -474,6 +476,413 @@ def excluir_categoria(id):
         return render_template('categoria_form.html', categoria=categoria, erro=erro)
     # Redireciona para lista de categorias
     return redirect(url_for('categorias'))
+
+
+# Rota para listar vendas realizadas
+@app.route('/vendas/')
+def vendas():
+    conn = conectar_mysql()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT v.IdVenda, v.DataVenda, v.ValorTotal, v.Desconto, v.ValorFinal, 
+               v.Status, c.Nome AS NomeCliente
+        FROM Venda v
+        LEFT JOIN Cliente c ON v.IdCliente = c.IdCliente
+        ORDER BY v.DataVenda DESC
+    """)
+    vendas = cursor.fetchall()
+    conn.close()
+    return render_template('vendas.html', vendas=vendas)
+
+# Função para processar a venda
+def processar_venda():
+    try:
+        # Dados da venda
+        id_cliente = request.form.get('id_cliente') or None
+        id_promocao = request.form.get('id_promocao') or None
+        desconto_geral = float(request.form.get('desconto_geral', 0))
+        
+        # Itens da venda
+        produtos_ids = request.form.getlist('produto_id[]')
+        quantidades = request.form.getlist('quantidade[]')
+        descontos_produto = request.form.getlist('desconto_produto[]')
+        
+        if not produtos_ids:
+            raise Exception("Nenhum produto selecionado para a venda")
+        
+        conn = conectar_mysql()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Verificar estoque disponível e calcular totais
+        itens_venda = []
+        valor_total_bruto = 0
+        total_descontos_produtos = 0
+        
+        for i, produto_id in enumerate(produtos_ids):
+            if not produto_id:
+                continue
+                
+            quantidade = int(quantidades[i])
+            desconto_produto = float(descontos_produto[i]) if descontos_produto[i] else 0
+            
+            # Buscar preço do produto e estoque atual
+            cursor.execute("""
+                SELECT p.Preco, e.Quantidade 
+                FROM Produto p 
+                JOIN Estoque e ON p.IdProduto = e.IdProduto 
+                WHERE p.IdProduto = %s
+            """, (produto_id,))
+            produto_info = cursor.fetchone()
+            
+            if not produto_info:
+                raise Exception(f"Produto {produto_id} não encontrado")
+            
+            if produto_info['Quantidade'] < quantidade:
+                raise Exception(f"Estoque insuficiente para o produto {produto_id}")
+            
+            preco_unitario = float(produto_info['Preco'])
+            subtotal_bruto = preco_unitario * quantidade
+            subtotal_final = subtotal_bruto - desconto_produto
+            
+            valor_total_bruto += subtotal_bruto
+            total_descontos_produtos += desconto_produto
+            
+            itens_venda.append({
+                'produto_id': produto_id,
+                'quantidade': quantidade,
+                'preco_unitario': preco_unitario,
+                'subtotal': subtotal_final,
+                'desconto_produto': desconto_produto
+            })
+        
+        # Calcular totais finais
+        total_descontos = total_descontos_produtos + desconto_geral
+        valor_final = valor_total_bruto - total_descontos
+        
+        # Inserir venda SEM IdPromocao se a coluna não existir
+        cursor.execute("""
+            INSERT INTO Venda (ValorTotal, Desconto, ValorFinal, IdCliente) 
+            VALUES (%s, %s, %s, %s)
+        """, (valor_total_bruto, total_descontos, valor_final, id_cliente))
+        
+        id_venda = cursor.lastrowid
+        
+        # Inserir itens da venda e atualizar estoque
+        for item in itens_venda:
+            cursor.execute("""
+                INSERT INTO ItemVenda (IdVenda, IdProduto, Quantidade, PrecoUnitario, Subtotal, DescontoProduto) 
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (id_venda, item['produto_id'], item['quantidade'], 
+                  item['preco_unitario'], item['subtotal'], item['desconto_produto']))
+            
+            cursor.execute("""
+                UPDATE Estoque SET Quantidade = Quantidade - %s WHERE IdProduto = %s
+            """, (item['quantidade'], item['produto_id']))
+        
+        conn.commit()
+        conn.close()
+        
+        return redirect(url_for('recibo_venda', id_venda=id_venda))
+        
+    except Exception as e:
+        # Buscar dados novamente para reexibir o formulário
+        conn = conectar_mysql()
+        cursor = conn.cursor(dictionary=True)
+        
+        cursor.execute("SELECT IdCliente, Nome FROM Cliente ORDER BY Nome")
+        clientes = cursor.fetchall()
+        
+        cursor.execute("""
+            SELECT p.IdProduto, p.Nome, p.Preco, e.Quantidade 
+            FROM Produto p 
+            JOIN Estoque e ON p.IdProduto = e.IdProduto 
+            WHERE e.Quantidade > 0 
+            ORDER BY p.Nome
+        """)
+        produtos = cursor.fetchall()
+        
+        cursor.execute("""
+            SELECT IdPromocao, Nome, TipoDesconto, ValorDesconto 
+            FROM Promocao 
+            WHERE Ativa = 1 AND DataInicio <= CURDATE() AND DataFim >= CURDATE()
+            ORDER BY Nome
+        """)
+        promocoes = cursor.fetchall()
+        
+        conn.close()
+        
+        return render_template('nova_venda.html', erro=f'Erro ao processar venda: {e}', 
+                             clientes=clientes, produtos=produtos, promocoes=promocoes)
+
+# Rota para visualizar recibo da venda
+@app.route('/vendas/recibo/<int:id_venda>')
+def recibo_venda(id_venda):
+    conn = conectar_mysql()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Buscar dados da venda com contato usando a estrutura correta
+    cursor.execute("""
+        SELECT v.IdVenda, v.DataVenda, v.ValorTotal, v.Desconto, v.ValorFinal,
+               c.Nome AS NomeCliente, c.CPF,
+               cont.Email, cont.Telefone
+        FROM Venda v
+        LEFT JOIN Cliente c ON v.IdCliente = c.IdCliente
+        LEFT JOIN Contato cont ON c.IdContato = cont.IdContato
+        WHERE v.IdVenda = %s
+    """, (id_venda,))
+    venda = cursor.fetchone()
+    
+    # Buscar itens da venda
+    cursor.execute("""
+        SELECT iv.Quantidade, iv.PrecoUnitario, iv.Subtotal, iv.DescontoProduto,
+               p.Nome AS NomeProduto
+        FROM ItemVenda iv
+        JOIN Produto p ON iv.IdProduto = p.IdProduto
+        WHERE iv.IdVenda = %s
+    """, (id_venda,))
+    itens = cursor.fetchall()
+    
+    conn.close()
+    
+    if not venda:
+        return redirect(url_for('vendas'))
+    
+    return render_template('recibo_venda.html', venda=venda, itens=itens)
+
+# Rota para cancelar venda
+@app.route('/vendas/cancelar/<int:id_venda>', methods=['POST'])
+def cancelar_venda(id_venda):
+    try:
+        conn = conectar_mysql()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Buscar itens da venda para restituir estoque
+        cursor.execute("""
+            SELECT IdProduto, Quantidade FROM ItemVenda WHERE IdVenda = %s
+        """, (id_venda,))
+        itens = cursor.fetchall()
+        
+        # Restituir estoque
+        for item in itens:
+            cursor.execute("""
+                UPDATE Estoque SET Quantidade = Quantidade + %s WHERE IdProduto = %s
+            """, (item['Quantidade'], item['IdProduto']))
+        
+        # Atualizar status da venda
+        cursor.execute("""
+            UPDATE Venda SET Status = 'Cancelada' WHERE IdVenda = %s
+        """, (id_venda,))
+        
+        conn.commit()
+        conn.close()
+        
+    except Exception as e:
+        # Em caso de erro, apenas redireciona
+        pass
+    
+    return redirect(url_for('vendas'))
+
+
+# Rota para nova promoção
+@app.route('/promocoes/nova', methods=['GET', 'POST'])
+def nova_promocao():
+    erro = None
+    if request.method == 'POST':
+        nome = request.form.get('nome')
+        tipo_desconto = request.form.get('tipo_desconto')
+        valor_desconto = request.form.get('valor_desconto')
+        data_inicio = request.form.get('data_inicio')
+        data_fim = request.form.get('data_fim')
+        
+        # Validações de data
+        try:
+            data_inicio_obj = datetime.strptime(data_inicio, '%Y-%m-%d').date()
+            data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d').date()
+            data_hoje = date.today()
+            
+            # Verificar se a data de início não é anterior ao dia atual
+            if data_inicio_obj < data_hoje:
+                raise Exception("A data de início não pode ser anterior ao dia atual")
+            
+            # Verificar se a data de fim não é anterior à data de início
+            if data_fim_obj < data_inicio_obj:
+                raise Exception("A data de fim não pode ser anterior à data de início")
+                
+        except ValueError:
+            raise Exception("Formato de data inválido")
+        
+        try:
+            conn = conectar_mysql()
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO Promocao (Nome, TipoDesconto, ValorDesconto, DataInicio, DataFim) 
+                VALUES (%s, %s, %s, %s, %s)
+            """, (nome, tipo_desconto, valor_desconto, data_inicio, data_fim))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('promocoes'))
+        except Exception as e:
+            erro = f'Erro ao cadastrar promoção: {e}'
+    
+    return render_template('promocao_form.html', erro=erro, promocao=None)
+
+# Rota para editar promoção
+@app.route('/promocoes/editar/<int:id>', methods=['GET', 'POST'])
+def editar_promocao(id):
+    conn = conectar_mysql()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM Promocao WHERE IdPromocao = %s", (id,))
+    promocao = cursor.fetchone()
+    
+    if not promocao:
+        conn.close()
+        return redirect(url_for('promocoes'))
+    
+    erro = None
+    if request.method == 'POST':
+        nome = request.form.get('nome')
+        tipo_desconto = request.form.get('tipo_desconto')
+        valor_desconto = request.form.get('valor_desconto')
+        data_inicio = request.form.get('data_inicio')
+        data_fim = request.form.get('data_fim')
+        ativa = request.form.get('ativa', '1')
+        
+        # Validações de data (mais flexíveis para edição)
+        try:
+            data_inicio_obj = datetime.strptime(data_inicio, '%Y-%m-%d').date()
+            data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d').date()
+            data_hoje = date.today()
+            
+            # Para promoções já iniciadas, não validar data de início
+            promocao_data_inicio = promocao['DataInicio']
+            if isinstance(promocao_data_inicio, str):
+                promocao_data_inicio = datetime.strptime(promocao_data_inicio, '%Y-%m-%d').date()
+            
+            # Se a promoção ainda não começou, validar data de início
+            if promocao_data_inicio > data_hoje and data_inicio_obj < data_hoje:
+                raise Exception("A data de início não pode ser anterior ao dia atual")
+            
+            # Verificar se a data de fim não é anterior à data de início
+            if data_fim_obj < data_inicio_obj:
+                raise Exception("A data de fim não pode ser anterior à data de início")
+                
+        except ValueError:
+            raise Exception("Formato de data inválido")
+        except Exception as e:
+            erro = str(e)
+        
+        if not erro:
+            try:
+                cursor.execute("""
+                    UPDATE Promocao SET Nome=%s, TipoDesconto=%s, ValorDesconto=%s, 
+                           DataInicio=%s, DataFim=%s, Ativa=%s 
+                    WHERE IdPromocao=%s
+                """, (nome, tipo_desconto, valor_desconto, data_inicio, data_fim, ativa, id))
+                conn.commit()
+                conn.close()
+                return redirect(url_for('promocoes'))
+            except Exception as e:
+                erro = f'Erro ao editar promoção: {e}'
+    
+    conn.close()
+    return render_template('promocao_form.html', erro=erro, promocao=promocao)
+
+# Função para atualizar status das promoções automaticamente
+def atualizar_status_promocoes():
+    try:
+        conn = conectar_mysql()
+        cursor = conn.cursor()
+        
+        # Desativar promoções vencidas
+        cursor.execute("""
+            UPDATE Promocao 
+            SET Ativa = 0 
+            WHERE DataFim < CURDATE() AND Ativa = 1
+        """)
+        
+        # Ativar promoções que devem estar ativas
+        cursor.execute("""
+            UPDATE Promocao 
+            SET Ativa = 1 
+            WHERE DataInicio <= CURDATE() AND DataFim >= CURDATE() AND Ativa = 0
+        """)
+        
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Erro ao atualizar status das promoções: {e}")
+
+# Rota para listar promoções (com atualização automática)
+@app.route('/promocoes')
+def promocoes():
+    # Atualizar status das promoções antes de listar
+    atualizar_status_promocoes()
+    
+    conn = conectar_mysql()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT IdPromocao, Nome, TipoDesconto, ValorDesconto, DataInicio, DataFim, Ativa
+        FROM Promocao 
+        ORDER BY DataInicio DESC
+    """)
+    promocoes = cursor.fetchall()
+    conn.close()
+    
+    return render_template('promocoes.html', promocoes=promocoes)
+
+# Rota para nova venda (com atualização automática de promoções)
+@app.route('/vendas/nova', methods=['GET', 'POST'])
+def nova_venda():
+    if request.method == 'POST':
+        return processar_venda()
+    
+    # Atualizar status das promoções antes de buscar
+    atualizar_status_promocoes()
+    
+    # Buscar dados necessários para o formulário
+    conn = conectar_mysql()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Buscar clientes
+    cursor.execute("SELECT IdCliente, Nome FROM Cliente ORDER BY Nome")
+    clientes = cursor.fetchall()
+    
+    # Buscar produtos com estoque
+    cursor.execute("""
+        SELECT p.IdProduto, p.Nome, p.Preco, e.Quantidade 
+        FROM Produto p 
+        JOIN Estoque e ON p.IdProduto = e.IdProduto 
+        WHERE e.Quantidade > 0 
+        ORDER BY p.Nome
+    """)
+    produtos = cursor.fetchall()
+    
+    # Buscar promoções ativas
+    cursor.execute("""
+        SELECT IdPromocao, Nome, TipoDesconto, ValorDesconto 
+        FROM Promocao 
+        WHERE Ativa = 1 AND DataInicio <= CURDATE() AND DataFim >= CURDATE()
+        ORDER BY Nome
+    """)
+    promocoes = cursor.fetchall()
+    
+    conn.close()
+    
+    return render_template('nova_venda.html', clientes=clientes, produtos=produtos, promocoes=promocoes)
+
+# Rota para excluir promoção
+@app.route('/promocoes/excluir/<int:id>', methods=['POST'])
+def excluir_promocao(id):
+    try:
+        conn = conectar_mysql()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM Promocao WHERE IdPromocao=%s", (id,))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        # Em caso de erro, apenas redireciona
+        pass
+    return redirect(url_for('promocoes'))
 
 
 # Executa a aplicação Flask em modo debug

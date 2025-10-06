@@ -17,9 +17,11 @@
             <span class="logo-text">StoqAi</span>
         </div>
         <div class="navbar-center">
-            <a href="{{ url_for('index') }}" class="nav-link">Produtos</a>
-            <a href="{{ url_for('categorias') }}" class="nav-link">Categorias</a>
-            <a href="{{ url_for('fornecedores') }}" class="nav-link active">Fornecedores</a>
+        <a href="{{ url_for('index') }}" class="active">Produtos</a>    
+        <a href="{{ url_for('categorias') }}">Categorias</a>
+        <a href="{{ url_for('fornecedores') }}">Fornecedores</a>
+        <a href="{{ url_for('vendas') }}">Vendas</a>
+        <a href="{{ url_for('promocoes') }}">Promoções</a>
         </div>
     </nav>
     <div class="container">
