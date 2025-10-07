@@ -137,8 +137,6 @@ CREATE TABLE IF NOT EXISTS movimentacaoestoque (
     FOREIGN KEY (IdProduto) REFERENCES Produto(IdProduto)
 );
 
-show tables;
-
 DELIMITER $$
 
 CREATE PROCEDURE ver_todas_tabelas()
@@ -155,30 +153,6 @@ BEGIN
 END $$
 
 DELIMITER ;
-
--- PARA FUNCIONAR RODE
--- CALL ver_todas_tabelas();
-
-DELIMITER $$
-
-CREATE PROCEDURE dropar_todas_tabelas()
-BEGIN
-    DROP TABLE IF EXISTS Endereco;
-    DROP TABLE IF EXISTS Contato;
-    DROP TABLE IF EXISTS Usuario;
-    DROP TABLE IF EXISTS Cliente;
-    DROP TABLE IF EXISTS Funcionario;
-    DROP TABLE IF EXISTS Categoria;
-    DROP TABLE IF EXISTS Fornecedor;
-    DROP TABLE IF EXISTS Produto;
-    DROP TABLE IF EXISTS Estoque;
-END $$
-
-DELIMITER ;
-
--- PARA FUNCIONAR RODE
--- CALL dropar_todas_tabelas();
-
 
 -- População da tabela: Contato
 INSERT INTO Contato (IdContato, Telefone, Email) VALUES
@@ -278,3 +252,11 @@ INSERT INTO Estoque (IdEstoque, IdProduto, Quantidade) VALUES
 (3, 3, 500),
 (4, 4, 20),
 (5, 5, 100);
+
+-- Inserindo 5 promoções de exemplo na tabela Promocao
+INSERT INTO Promocao (Nome, TipoDesconto, ValorDesconto, DataInicio, DataFim, Ativa) VALUES
+('Promoção de Verão', 'Percentual', 15.00, '2025-01-01', '2025-03-31', TRUE),
+('Queima de Estoque Inverno', 'Valor', 50.00, '2025-07-15', '2025-08-15', TRUE),
+('Black Friday', 'Percentual', 40.00, '2025-11-28', '2025-11-30', TRUE),
+('Cupom de Aniversário', 'Valor', 25.00, '2024-05-01', '2024-05-31', FALSE),
+('Desconto Primeira Compra', 'Percentual', 10.00, '2025-01-01', '2025-12-31', TRUE);
