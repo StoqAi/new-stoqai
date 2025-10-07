@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Histórico de Movimentações</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Histórico de Movimentações de Estoque</h1>
+        <div style="display: flex; gap: 12px; margin-bottom: 18px;">
+            <a href="{{ url_for('relatorio_movimentacoes_csv') }}" class="btn" style="width: 160px; height: 25px;" download>Exportar CSV</a>
+            <a href="{{ url_for('relatorios') }}" class="btn" style="width: 120px; height: 25px; background:#4b4b4b;">Voltar</a>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Tipo</th>
+                    <th>Produto</th>
+                    <th>Quantidade</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in movimentacoes %}
+                <tr>
+                    <td>{{ m.DataMovimentacao }}</td>
+                    <td>{{ m.Tipo }}</td>
+                    <td>{{ m.NomeProduto }}</td>
+                    <td>{{ m.Quantidade }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if not movimentacoes %}
+        <p>Nenhuma movimentação registrada.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

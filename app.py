@@ -1,4 +1,5 @@
-# Importa as bibliotecas necessárias do Flask e MySQL Connector
+import csv
+from flask import Response
 from flask import Flask, render_template, request, redirect, url_for
 import mysql.connector
 import re
@@ -15,7 +16,7 @@ def conectar_mysql():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        password="fiap",
+        password="henry",
         database="estoque_loja"
     )
 
@@ -89,6 +90,11 @@ def atualizar_estoque(id):
                 "UPDATE Estoque SET Quantidade=%s WHERE IdProduto=%s",
                 (quantidade, id)
             )
+            # Registra movimentação de ajuste
+            cursor2.execute(
+                "INSERT INTO movimentacaoestoque (DataMovimentacao, Tipo, IdProduto, Quantidade) VALUES (CURDATE(), %s, %s, %s)",
+                ("ajuste", id, quantidade)
+            )
             conn.commit()
             cursor2.close()
         except Exception as e:
@@ -138,6 +144,11 @@ def cadastrar():
                 "INSERT INTO Estoque (IdProduto, Quantidade) VALUES (%s, %s)",
                 (id_produto, quantidade)
             )
+            # Registra movimentação de entrada inicial
+            cursor.execute(
+                "INSERT INTO movimentacaoestoque (DataMovimentacao, Tipo, IdProduto, Quantidade) VALUES (CURDATE(), %s, %s, %s)",
+                ("entrada", id_produto, quantidade)
+            )
             conn.commit()
             conn.close()
         except Exception as e:
@@ -159,6 +170,8 @@ def aumentar(id_produto):
     cursor = conn.cursor()
     # Soma quantidade ao estoque
     cursor.execute("UPDATE Estoque SET Quantidade = Quantidade + %s WHERE IdProduto = %s", (qtd, id_produto))
+    # Registra movimentação de entrada
+    cursor.execute("INSERT INTO movimentacaoestoque (DataMovimentacao, Tipo, IdProduto, Quantidade) VALUES (CURDATE(), %s, %s, %s)", ("entrada", id_produto, qtd))
     conn.commit()
     conn.close()
     # Redireciona para página inicial
@@ -173,6 +186,8 @@ def reduzir(id_produto):
     cursor = conn.cursor()
     # Subtrai quantidade do estoque, se houver quantidade suficiente
     cursor.execute("UPDATE Estoque SET Quantidade = Quantidade - %s WHERE IdProduto = %s AND Quantidade >= %s", (qtd, id_produto, qtd))
+    # Registra movimentação de saída
+    cursor.execute("INSERT INTO movimentacaoestoque (DataMovimentacao, Tipo, IdProduto, Quantidade) VALUES (CURDATE(), %s, %s, %s)", ("saida", id_produto, qtd))
     conn.commit()
     conn.close()
     # Redireciona para página inicial
@@ -187,6 +202,8 @@ def ajustar(id_produto):
     cursor = conn.cursor()
     # Define nova quantidade no estoque
     cursor.execute("UPDATE Estoque SET Quantidade = %s WHERE IdProduto = %s", (nova_qtd, id_produto))
+    # Registra movimentação de ajuste
+    cursor.execute("INSERT INTO movimentacaoestoque (DataMovimentacao, Tipo, IdProduto, Quantidade) VALUES (CURDATE(), %s, %s, %s)", ("ajuste", id_produto, nova_qtd))
     conn.commit()
     conn.close()
     # Redireciona para página inicial
@@ -574,10 +591,14 @@ def processar_venda():
                 VALUES (%s, %s, %s, %s, %s, %s)
             """, (id_venda, item['produto_id'], item['quantidade'], 
                   item['preco_unitario'], item['subtotal'], item['desconto_produto']))
-            
+            # Atualiza estoque
             cursor.execute("""
                 UPDATE Estoque SET Quantidade = Quantidade - %s WHERE IdProduto = %s
             """, (item['quantidade'], item['produto_id']))
+            # Registra movimentação de saída por venda
+            cursor.execute("""
+                INSERT INTO movimentacaoestoque (DataMovimentacao, Tipo, IdProduto, Quantidade) VALUES (CURDATE(), %s, %s, %s)
+            """, ("venda", item['produto_id'], item['quantidade']))
         
         conn.commit()
         conn.close()
@@ -696,11 +717,15 @@ def nova_promocao():
         
         # Validações de data
         try:
-            data_inicio_obj = datetime.strptime(data_inicio, '%Y-%m-%d').date()
-            data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d').date()
+            # Aceita apenas 'dd/MM/yyyy'
+            data_inicio_obj = datetime.strptime(data_inicio, '%d/%m/%Y').date()
+            data_fim_obj = datetime.strptime(data_fim, '%d/%m/%Y').date()
+            # Converter para yyyy-mm-dd para o MySQL
+            data_inicio_mysql = data_inicio_obj.strftime('%Y-%m-%d')
+            data_fim_mysql = data_fim_obj.strftime('%Y-%m-%d')
             data_hoje = date.today()
             
-            # Verificar se a data de início não é anterior ao dia atual
+            # Permitir data de início igual ao dia atual
             if data_inicio_obj < data_hoje:
                 raise Exception("A data de início não pode ser anterior ao dia atual")
             
@@ -717,7 +742,7 @@ def nova_promocao():
             cursor.execute("""
                 INSERT INTO Promocao (Nome, TipoDesconto, ValorDesconto, DataInicio, DataFim) 
                 VALUES (%s, %s, %s, %s, %s)
-            """, (nome, tipo_desconto, valor_desconto, data_inicio, data_fim))
+            """, (nome, tipo_desconto, valor_desconto, data_inicio_mysql, data_fim_mysql))
             conn.commit()
             conn.close()
             return redirect(url_for('promocoes'))
@@ -749,8 +774,12 @@ def editar_promocao(id):
         
         # Validações de data (mais flexíveis para edição)
         try:
-            data_inicio_obj = datetime.strptime(data_inicio, '%Y-%m-%d').date()
-            data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d').date()
+            # Aceita apenas 'dd/MM/yyyy'
+            data_inicio_obj = datetime.strptime(data_inicio, '%d/%m/%Y').date()
+            data_fim_obj = datetime.strptime(data_fim, '%d/%m/%Y').date()
+            # Converter para yyyy-mm-dd para o MySQL
+            data_inicio_mysql = data_inicio_obj.strftime('%Y-%m-%d')
+            data_fim_mysql = data_fim_obj.strftime('%Y-%m-%d')
             data_hoje = date.today()
             
             # Para promoções já iniciadas, não validar data de início
@@ -758,7 +787,7 @@ def editar_promocao(id):
             if isinstance(promocao_data_inicio, str):
                 promocao_data_inicio = datetime.strptime(promocao_data_inicio, '%Y-%m-%d').date()
             
-            # Se a promoção ainda não começou, validar data de início
+            # Se a promoção ainda não começou, validar data de início (permitir igual ao dia atual)
             if promocao_data_inicio > data_hoje and data_inicio_obj < data_hoje:
                 raise Exception("A data de início não pode ser anterior ao dia atual")
             
@@ -777,7 +806,7 @@ def editar_promocao(id):
                     UPDATE Promocao SET Nome=%s, TipoDesconto=%s, ValorDesconto=%s, 
                            DataInicio=%s, DataFim=%s, Ativa=%s 
                     WHERE IdPromocao=%s
-                """, (nome, tipo_desconto, valor_desconto, data_inicio, data_fim, ativa, id))
+                """, (nome, tipo_desconto, valor_desconto, data_inicio_mysql, data_fim_mysql, ativa, id))
                 conn.commit()
                 conn.close()
                 return redirect(url_for('promocoes'))
@@ -885,6 +914,136 @@ def excluir_promocao(id):
     return redirect(url_for('promocoes'))
 
 
+# ------------------- PÁGINA UNIFICADA DE RELATÓRIOS -------------------
+@app.route('/relatorios')
+def relatorios():
+    return render_template('relatorios.html')
+
+# ------------------- RELATÓRIOS -------------------
+# Relatório de Vendas: Detalha vendas realizadas (data, produtos vendidos, quantidade, valor total)
+@app.route('/relatorios/vendas')
+def relatorio_vendas():
+    conn = conectar_mysql()
+    cursor = conn.cursor(dictionary=True)
+    # Consulta vendas e itens vendidos
+    cursor.execute('''
+        SELECT Venda.IdVenda, Venda.DataVenda, Venda.ValorTotal,
+               ItemVenda.IdProduto, Produto.Nome AS NomeProduto, ItemVenda.Quantidade, ItemVenda.PrecoUnitario
+        FROM Venda
+        JOIN ItemVenda ON Venda.IdVenda = ItemVenda.IdVenda
+        JOIN Produto ON ItemVenda.IdProduto = Produto.IdProduto
+        ORDER BY Venda.DataVenda DESC, Venda.IdVenda DESC
+    ''')
+    vendas = cursor.fetchall()
+    conn.close()
+    # Agrupa vendas por IdVenda
+    from collections import defaultdict
+    vendas_dict = defaultdict(lambda: {'itens': []})
+    for v in vendas:
+        venda_id = v['IdVenda']
+        if 'DataVenda' not in vendas_dict[venda_id]:
+            vendas_dict[venda_id]['DataVenda'] = v['DataVenda']
+            vendas_dict[venda_id]['ValorTotal'] = v['ValorTotal']
+        vendas_dict[venda_id]['itens'].append({
+            'IdProduto': v['IdProduto'],
+            'NomeProduto': v['NomeProduto'],
+            'Quantidade': v['Quantidade'],
+            'PrecoUnitario': v['PrecoUnitario']
+        })
+    return render_template('relatorio_vendas.html', vendas=vendas_dict)
+
+# Relatório de Estoque: Mostra quantidade atual de todos os produtos
+@app.route('/relatorios/estoque')
+def relatorio_estoque():
+    conn = conectar_mysql()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('''
+        SELECT Produto.IdProduto, Produto.Nome, Estoque.Quantidade
+        FROM Produto
+        JOIN Estoque ON Produto.IdProduto = Estoque.IdProduto
+        ORDER BY Produto.Nome ASC
+    ''')
+    produtos = cursor.fetchall()
+    conn.close()
+    return render_template('relatorio_estoque.html', produtos=produtos)
+
+# Histórico de Movimentações: Registra todas as adições e remoções de estoque
+@app.route('/relatorios/movimentacoes')
+def relatorio_movimentacoes():
+    conn = conectar_mysql()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('''
+        SELECT M.IdMovimentacao, M.DataMovimentacao, M.Tipo, M.Quantidade, M.IdProduto, Produto.Nome AS NomeProduto
+        FROM MovimentacaoEstoque M
+        JOIN Produto ON M.IdProduto = Produto.IdProduto
+        ORDER BY M.DataMovimentacao DESC, M.IdMovimentacao DESC
+    ''')
+    movimentacoes = cursor.fetchall()
+    conn.close()
+    return render_template('relatorio_movimentacoes.html', movimentacoes=movimentacoes)
+
+
+# Exportar relatório de vendas para CSV
+@app.route('/relatorios/vendas/csv')
+def relatorio_vendas_csv():
+    conn = conectar_mysql()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('''
+        SELECT Venda.IdVenda, Venda.DataVenda, Venda.ValorTotal,
+               ItemVenda.IdProduto, Produto.Nome AS NomeProduto, ItemVenda.Quantidade, ItemVenda.PrecoUnitario
+        FROM Venda
+        JOIN ItemVenda ON Venda.IdVenda = ItemVenda.IdVenda
+        JOIN Produto ON ItemVenda.IdProduto = Produto.IdProduto
+        ORDER BY Venda.DataVenda DESC, Venda.IdVenda DESC
+    ''')
+    vendas = cursor.fetchall()
+    conn.close()
+    # Monta CSV
+    def generate():
+        yield 'IdVenda,DataVenda,ValorTotal,IdProduto,NomeProduto,Quantidade,PrecoUnitario\n'
+        for v in vendas:
+            yield f"{v['IdVenda']},{v['DataVenda']},{v['ValorTotal']},{v['IdProduto']},\"{v['NomeProduto']}\",{v['Quantidade']},{v['PrecoUnitario']}\n"
+    return Response(generate(), mimetype='text/csv', headers={"Content-Disposition": "attachment;filename=relatorio_vendas.csv"})
+
+# Exportar relatório de estoque para CSV
+@app.route('/relatorios/estoque/csv')
+def relatorio_estoque_csv():
+    conn = conectar_mysql()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('''
+        SELECT Produto.IdProduto, Produto.Nome, Estoque.Quantidade
+        FROM Produto
+        JOIN Estoque ON Produto.IdProduto = Estoque.IdProduto
+        ORDER BY Produto.Nome ASC
+    ''')
+    produtos = cursor.fetchall()
+    conn.close()
+    def generate():
+        yield 'IdProduto,Nome,Quantidade\n'
+        for p in produtos:
+            yield f"{p['IdProduto']},\"{p['Nome']}\",{p['Quantidade']}\n"
+    return Response(generate(), mimetype='text/csv', headers={"Content-Disposition": "attachment;filename=relatorio_estoque.csv"})
+
+# Exportar histórico de movimentações para CSV
+@app.route('/relatorios/movimentacoes/csv')
+def relatorio_movimentacoes_csv():
+    conn = conectar_mysql()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('''
+        SELECT M.IdMovimentacao, M.DataMovimentacao, M.Tipo, M.Quantidade, M.IdProduto, Produto.Nome AS NomeProduto
+        FROM MovimentacaoEstoque M
+        JOIN Produto ON M.IdProduto = Produto.IdProduto
+        ORDER BY M.DataMovimentacao DESC, M.IdMovimentacao DESC
+    ''')
+    movimentacoes = cursor.fetchall()
+    conn.close()
+    def generate():
+        yield 'IdMovimentacao,DataMovimentacao,Tipo,Quantidade,IdProduto,NomeProduto\n'
+        for m in movimentacoes:
+            yield f"{m['IdMovimentacao']},{m['DataMovimentacao']},{m['Tipo']},{m['Quantidade']},{m['IdProduto']},\"{m['NomeProduto']}\"\n"
+    return Response(generate(), mimetype='text/csv', headers={"Content-Disposition": "attachment;filename=relatorio_movimentacoes.csv"})
+
 # Executa a aplicação Flask em modo debug
 if __name__ == '__main__':
     app.run(debug=True)
+

@@ -1,19 +1,11 @@
+
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
+    <title>Gestão de Vendas</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vendas - StoqAi</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        .recibo { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .recibo-header { text-align: center; margin-bottom: 30px; }
-        .recibo-info { margin-bottom: 20px; }
-        @media print {
-            .btn, .navbar { display: none; }
-            body { margin: 0; }
-        }
-    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -22,22 +14,20 @@
             <span class="logo-text">StoqAi</span>
         </div>
         <div class="navbar-center">
-        <a href="{{ url_for('index') }}" class="active">Produtos</a>    
-        <a href="{{ url_for('categorias') }}">Categorias</a>
-        <a href="{{ url_for('fornecedores') }}">Fornecedores</a>
-        <a href="{{ url_for('vendas') }}">Vendas</a>
-        <a href="{{ url_for('promocoes') }}">Promoções</a>
+            <a href="{{ url_for('index') }}">Produtos</a>
+            <a href="{{ url_for('categorias') }}">Categorias</a>
+            <a href="{{ url_for('fornecedores') }}">Fornecedores</a>
+            <a href="{{ url_for('vendas') }}" class="active">Vendas</a>
+            <a href="{{ url_for('promocoes') }}">Promoções</a>
+            <a href="{{ url_for('relatorios') }}">Relatórios</a>
         </div>
     </nav>
-
     <div class="container">
         <h1>Gestão de Vendas</h1>
-        <p class="subtitle">Realize suas vendas de forma eficiente e intuitiva.</p>
-        <div class="actions">
-            <div style="display: flex; gap: 12px; margin-bottom: 18px; width: 100%; justify-content: flex-start;">
-            <a href="{{ url_for('nova_venda') }}" class="btn" style="width: 120px; height: 22px;">Cadastrar</a>
+        <p style="color:#555; margin-bottom:18px;">Realize suas vendas de forma eficiente e intuitiva.</p>
+        <div style="display: flex; gap: 12px; margin-bottom: 18px; width: 100%; justify-content: flex-start;">
+            <a href="{{ url_for('nova_venda') }}" class="btn" style="width: 120px; height: 25px;">Cadastrar</a>
         </div>
-
         {% if vendas %}
         <table>
             <thead>
@@ -66,13 +56,15 @@
                             {{ venda.Status }}
                         </span>
                     </td>
-                    <td>
-                        <a href="{{ url_for('recibo_venda', id_venda=venda.IdVenda) }}" class="btn-action">Ver Recibo</a>
-                        {% if venda.Status == 'Concluída' %}
-                        <form method="POST" action="{{ url_for('cancelar_venda', id_venda=venda.IdVenda) }}" style="display: inline;">
-                            <button type="submit" class="btn-delete" onclick="return confirm('Tem certeza que deseja cancelar esta venda?')">Cancelar</button>
-                        </form>
-                        {% endif %}
+                    <td style="min-width: 140px;">
+                        <div style="display: flex; flex-direction: row; gap: 10px; justify-content: center; align-items: center;">
+                            <a href="{{ url_for('recibo_venda', id_venda=venda.IdVenda) }}" class="btn" style="width: 130px; height: 40px; font-size: 1.08rem; padding: 0; line-height: 40px; text-align: center;">Recibo</a>
+                            {% if venda.Status == 'Concluída' %}
+                            <form method="POST" action="{{ url_for('cancelar_venda', id_venda=venda.IdVenda) }}" style="display: inline; margin: 0;">
+                                  <button type="submit" class="btn" style="background:#4b4b4b;width: 130px; height: 40px; font-size: 1.08rem; padding: 0; line-height: 40px; text-align: center;" onclick="return confirm('Tem certeza que deseja cancelar esta venda?')">Cancelar</button>
+                            </form>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}

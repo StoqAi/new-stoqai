@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Relatórios</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <span class="logo-icon">◆</span>
+            <span class="logo-text">StoqAi</span>
+        </div>
+        <div class="navbar-center">
+            <a href="{{ url_for('index') }}">Produtos</a>
+            <a href="{{ url_for('categorias') }}">Categorias</a>
+            <a href="{{ url_for('fornecedores') }}">Fornecedores</a>
+            <a href="{{ url_for('vendas') }}">Vendas</a>
+            <a href="{{ url_for('promocoes') }}">Promoções</a>
+            <a href="{{ url_for('relatorios') }}" class="active">Relatórios</a>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>Relatórios</h1>
+        <p style="color:#555; margin-bottom:24px;">Escolha o tipo de relatório que deseja visualizar ou exportar.<br>Cada opção permite exportar para CSV.</p>
+        <div style="display: flex; gap: 24px; margin-bottom: 36px; flex-wrap: wrap; justify-content: flex-start;">
+            <a href="{{ url_for('relatorio_vendas') }}" class="btn" style="width: 220px; height: 30px; font-size: 1.08rem;">Relatório de Vendas</a>
+            <a href="{{ url_for('relatorio_estoque') }}" class="btn" style="width: 220px; height: 30px; font-size: 1.08rem;">Relatório de Estoque</a>
+            <a href="{{ url_for('relatorio_movimentacoes') }}" class="btn" style="width: 220px; height: 30px; font-size: 1.08rem;">Hist. de Movimentações</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -4,12 +4,7 @@
     <title>{% if categoria %}Editar{% else %}Cadastrar{% endif %} Categoria</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<script>
-    // Se estiver em uma rota diferente de "/", mas quer mostrar "/" na barra de endereços:
-    if (window.location.pathname !== "/") {
-        history.replaceState({}, '', '/');
-    }
-</script>
+
 <body>
     <nav class="navbar">
         <div class="navbar-left">
@@ -17,11 +12,12 @@
             <span class="logo-text">StoqAi</span>
         </div>
         <div class="navbar-center">
-        <a href="{{ url_for('index') }}" class="active">Produtos</a>    
-        <a href="{{ url_for('categorias') }}">Categorias</a>
-        <a href="{{ url_for('fornecedores') }}">Fornecedores</a>
-        <a href="{{ url_for('vendas') }}">Vendas</a>
-        <a href="{{ url_for('promocoes') }}">Promoções</a>
+            <a href="{{ url_for('index') }}">Produtos</a>
+            <a href="{{ url_for('categorias') }}" class="active">Categorias</a>
+            <a href="{{ url_for('fornecedores') }}">Fornecedores</a>
+            <a href="{{ url_for('vendas') }}">Vendas</a>
+            <a href="{{ url_for('promocoes') }}">Promoções</a>
+            <a href="{{ url_for('relatorios') }}">Relatórios</a>
         </div>
     </nav>
     <div class="container">

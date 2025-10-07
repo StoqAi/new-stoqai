@@ -2,6 +2,7 @@
 
 O **StoqAi** é um sistema web desenvolvido em Python (Flask) para o gerenciamento completo de estoque de uma loja. O objetivo do projeto é facilitar o controle de produtos, categorias, fornecedores e estoque, oferecendo uma interface simples, intuitiva e eficiente para pequenas e médias empresas.
 
+
 ## Funcionalidades
 
 - **Cadastro, edição e exclusão de produtos**
@@ -16,10 +17,24 @@ O **StoqAi** é um sistema web desenvolvido em Python (Flask) para o gerenciamen
 - **Controle de estoque**
   - Ajuste, aumento e redução de quantidades.
   - Visualização rápida dos itens críticos.
-- **Interface amigável**
-  - Navegação por navbar.
+  - Registro automático de todas as movimentações de estoque (entrada, saída, ajuste, venda).
+- **Gestão de vendas**
+  - Cadastro de vendas, desconto por produto e geral.
+  - Controle de itens vendidos e atualização automática do estoque.
+  - Recibo de venda com opção de impressão.
+- **Gestão de promoções**
+  - Cadastro, edição e exclusão de promoções.
+  - Aplicação automática de descontos em vendas.
+- **Relatórios completos**
+  - Relatório de vendas, estoque e movimentações.
+  - Exportação de relatórios para CSV.
+  - Visualização e impressão dos relatórios diretamente pelo sistema.
+- **Interface amigável e padronizada**
+  - Navbar em todas as páginas.
+  - Layout moderno e responsivo.
   - Formulários dinâmicos com validação.
   - Mensagens de erro e confirmação.
+  - Botões e navegação padronizados.
 
 ## Tecnologias Utilizadas
 

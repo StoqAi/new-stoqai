@@ -1,42 +1,38 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
+    <title>Recibo de Venda</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recibo - Venda #{{ venda.IdVenda }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <nav class="navbar">
-        <div class="nav-brand">
-            <h2>StoqAi</h2>
+        <div class="navbar-left">
+            <span class="logo-icon">◆</span>
+            <span class="logo-text">StoqAi</span>
         </div>
-        <ul class="nav-menu">
-            <li><a href="{{ url_for('vendas') }}">← Voltar para Vendas</a></li>
-        </ul>
+        <div class="navbar-center">
+            <a href="{{ url_for('index') }}">Produtos</a>
+            <a href="{{ url_for('categorias') }}">Categorias</a>
+            <a href="{{ url_for('fornecedores') }}">Fornecedores</a>
+            <a href="{{ url_for('vendas') }}" class="active">Vendas</a>
+            <a href="{{ url_for('promocoes') }}">Promoções</a>
+            <a href="{{ url_for('relatorios') }}">Relatórios</a>
+        </div>
     </nav>
-
     <div class="container">
-        <div style="text-align: center; margin-bottom: 30px;">
-            <h1>RECIBO DE VENDA</h1>
-            <h2>StoqAi - Sistema de Gestão</h2>
-            <p><strong>Venda #{{ venda.IdVenda }}</strong></p>
+    <h1>Recibo de Venda</h1>
+    <p style="color:#555; margin-bottom:18px;">Confira os detalhes da venda abaixo.</p>
+    <a href="{{ url_for('vendas') }}" class="btn no-print" style="margin-bottom: 18px; width: 120px; height: 25px;">Voltar</a>
+        <div style="margin-bottom: 18px;">
+            <strong>Venda #{{ venda.IdVenda }}</strong><br>
+            <strong>Data/Hora:</strong> {{ venda.DataVenda.strftime('%d/%m/%Y %H:%M:%S') }}<br>
+            <strong>Cliente:</strong> {{ venda.NomeCliente or 'Cliente Avulso' }}<br>
+            {% if venda.CPF %}<strong>CPF:</strong> {{ venda.CPF }}<br>{% endif %}
+            {% if venda.Telefone %}<strong>Telefone:</strong> {{ venda.Telefone }}<br>{% endif %}
+            {% if venda.Email %}<strong>Email:</strong> {{ venda.Email }}<br>{% endif %}
         </div>
-
-        <div style="margin-bottom: 20px;">
-            <p><strong>Data/Hora:</strong> {{ venda.DataVenda.strftime('%d/%m/%Y %H:%M:%S') }}</p>
-            <p><strong>Cliente:</strong> {{ venda.NomeCliente or 'Cliente Avulso' }}</p>
-            {% if venda.CPF %}
-            <p><strong>CPF:</strong> {{ venda.CPF }}</p>
-            {% endif %}
-            {% if venda.Telefone %}
-            <p><strong>Telefone:</strong> {{ venda.Telefone }}</p>
-            {% endif %}
-            {% if venda.Email %}
-            <p><strong>Email:</strong> {{ venda.Email }}</p>
-            {% endif %}
-        </div>
-
         <table>
             <thead>
                 <tr>
@@ -59,17 +55,22 @@
                 {% endfor %}
             </tbody>
         </table>
-
-        <div style="margin-top: 20px; text-align: right; border-top: 2px solid #333; padding-top: 10px;">
+        <div style="margin-top: 18px; text-align: right; border-top: 2px solid #333; padding-top: 10px;">
             <p><strong>Valor Total:</strong> R$ {{ "%.2f"|format(venda.ValorTotal) }}</p>
             <p><strong>Desconto Geral:</strong> R$ {{ "%.2f"|format(venda.Desconto) }}</p>
             <p style="font-size: 1.2em; color: #333;"><strong>VALOR FINAL:</strong> R$ {{ "%.2f"|format(venda.ValorFinal) }}</p>
         </div>
-
-        <div style="text-align: center; margin-top: 30px;" class="no-print">
-            <button onclick="window.print()" class="btn-primary">Imprimir Recibo</button>
-            <a href="{{ url_for('vendas') }}" class="btn-secondary">Voltar</a>
+    <!-- Adiciona classe no-print para ocultar na impressão -->
+        <div style="display: flex; gap: 16px; margin-top: 30px; justify-content: center;" class="no-print">
+            <button onclick="window.print()" class="btn" style="width: 180px; height: 45px;">Imprimir Recibo</button>
         </div>
+    <style>
+        @media print {
+            .no-print, .no-print * {
+                display: none !important;
+            }
+        }
+    </style>
     </div>
 </body>
 </html>

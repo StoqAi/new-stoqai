@@ -1,134 +1,118 @@
+
 <!DOCTYPE html>
-<html lang="pt-br">
+<html>
 <head>
+    <title>{% if promocao %}Editar Promoção{% else %}Cadastrar Promoção{% endif %}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ 'Nova Promoção' if not promocao else 'Editar Promoção' }} - StoqAi</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <nav class="navbar">
-        <div class="nav-brand">
-            <h2>StoqAi</h2>
+        <div class="navbar-left">
+            <span class="logo-icon">◆</span>
+            <span class="logo-text">StoqAi</span>
         </div>
-        <ul class="nav-menu">
-            <li><a href="{{ url_for('index') }}">Produtos</a></li>
-            <li><a href="{{ url_for('categorias') }}">Categorias</a></li>
-            <li><a href="{{ url_for('fornecedores') }}">Fornecedores</a></li>
-            <li><a href="{{ url_for('vendas') }}">Vendas</a></li>
-            <li><a href="{{ url_for('promocoes') }}">Promoções</a></li>
-        </ul>
+        <div class="navbar-center">
+            <a href="{{ url_for('index') }}" class="active">Produtos</a>
+            <a href="{{ url_for('categorias') }}">Categorias</a>
+            <a href="{{ url_for('fornecedores') }}">Fornecedores</a>
+            <a href="{{ url_for('vendas') }}">Vendas</a>
+            <a href="{{ url_for('promocoes') }}">Promoções</a>
+            <a href="{{ url_for('relatorios') }}">Relatórios</a>
+        </div>
     </nav>
-
     <div class="container">
-        <h1>{{ 'Nova Promoção' if not promocao else 'Editar Promoção' }}</h1>
-
+        <h1>{% if promocao %}Editar Promoção{% else %}Cadastrar Promoção{% endif %}</h1>
+        <p style="color:#555; margin-bottom:18px;">Atualize os campos abaixo para modificar uma promoção.</p>
+        <a href="{{ url_for('promocoes') }}" class="btn" style="margin-bottom: 18px; width: 120px; height: 25px;">Voltar</a>
         {% if erro %}
-        <div class="error-message">{{ erro }}</div>
+            <div class="alerta">{{ erro }}</div>
         {% endif %}
-
-        <form method="POST" class="form-container" onsubmit="return validarDatas()">
+        <form method="POST" style="margin-bottom: 0;" onsubmit="return validarDatas()">
             <div class="form-group">
                 <label for="nome">Nome da Promoção:</label>
-                <input type="text" name="nome" id="nome" required 
-                       value="{{ promocao.Nome if promocao else '' }}">
+                <input type="text" id="nome" name="nome" value="{{ promocao.Nome if promocao else '' }}" required>
             </div>
-
             <div class="form-group">
                 <label for="tipo_desconto">Tipo de Desconto:</label>
-                <select name="tipo_desconto" id="tipo_desconto" required>
-                    <option value="Percentual" {{ 'selected' if promocao and promocao.TipoDesconto == 'Percentual' else '' }}>Percentual (%)</option>
-                    <option value="Valor" {{ 'selected' if promocao and promocao.TipoDesconto == 'Valor' else '' }}>Valor Fixo (R$)</option>
+                <select id="tipo_desconto" name="tipo_desconto" required>
+                    <option value="Percentual" {% if promocao and promocao.TipoDesconto == 'Percentual' %}selected{% endif %}>Percentual (%)</option>
+                    <option value="Valor" {% if promocao and promocao.TipoDesconto == 'Valor' %}selected{% endif %}>Valor Fixo (R$)</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label for="valor_desconto">Valor do Desconto:</label>
-                <input type="number" name="valor_desconto" id="valor_desconto" step="0.01" min="0" required
-                       value="{{ promocao.ValorDesconto if promocao else '' }}">
+                <input type="number" id="valor_desconto" name="valor_desconto" step="0.01" min="0" value="{{ promocao.ValorDesconto if promocao else '' }}" required>
             </div>
-
             <div class="form-group">
                 <label for="data_inicio">Data de Início:</label>
-                <input type="date" name="data_inicio" id="data_inicio" required
-                       value="{{ promocao.DataInicio.strftime('%Y-%m-%d') if promocao else '' }}">
-                <small>{% if not promocao %}* A data de início deve ser hoje ou uma data futura{% endif %}</small>
+                <input type="text" id="data_inicio" name="data_inicio" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" placeholder="dd/mm/aaaa" value="{{ promocao.DataInicio.strftime('%d/%m/%Y') if promocao else '' }}" required>
+                <small>{% if not promocao %}* A data de início deve ser hoje ou uma data futura (dd/mm/aaaa){% endif %}</small>
             </div>
-
             <div class="form-group">
                 <label for="data_fim">Data de Fim:</label>
-                <input type="date" name="data_fim" id="data_fim" required
-                       value="{{ promocao.DataFim.strftime('%Y-%m-%d') if promocao else '' }}">
-                <small>* A data de fim deve ser posterior à data de início</small>
+                <input type="text" id="data_fim" name="data_fim" maxlength="10" pattern="\d{2}/\d{2}/\d{4}" placeholder="dd/mm/aaaa" value="{{ promocao.DataFim.strftime('%d/%m/%Y') if promocao else '' }}" required>
+                <small>* A data de fim deve ser posterior à data de início (dd/mm/aaaa)</small>
             </div>
-
             {% if promocao %}
             <div class="form-group">
                 <label for="ativa">Status:</label>
-                <select name="ativa" id="ativa">
-                    <option value="1" {{ 'selected' if promocao.Ativa else '' }}>Ativa</option>
-                    <option value="0" {{ 'selected' if not promocao.Ativa else '' }}>Inativa</option>
+                <select id="ativa" name="ativa">
+                    <option value="1" {% if promocao.Ativa %}selected{% endif %}>Ativa</option>
+                    <option value="0" {% if not promocao.Ativa %}selected{% endif %}>Inativa</option>
                 </select>
             </div>
             {% endif %}
-
-            <div class="form-actions">
-                <button type="submit" class="btn-primary">{{ 'Cadastrar' if not promocao else 'Atualizar' }}</button>
-                <a href="{{ url_for('promocoes') }}" class="btn-secondary">Cancelar</a>
+            <div style="display: flex; gap: 16px; margin-top: 18px;">
+                <button type="submit" class="btn" style="width: 180px; height: 45px;">{% if promocao %}Salvar Alterações{% else %}Cadastrar{% endif %}</button>
+                {% if promocao %}
+                <button
+                    type="submit"
+                    formaction="{{ url_for('excluir_promocao', id=promocao.IdPromocao) }}"
+                    formmethod="POST"
+                    class="btn"
+                    style="background:#4b4b4b;width:150px; height: 45px;"
+                    onclick="return confirm('Tem certeza que deseja excluir esta promoção?');"
+                >Excluir</button>
+                {% endif %}
             </div>
         </form>
     </div>
-
-    <!-- Campo oculto para indicar se é nova promoção -->
     <input type="hidden" id="is-nova-promocao" value="{{ '1' if not promocao else '0' }}">
-
     <script>
-        // Pegar informação se é nova promoção
-        const isNovaPromocao = document.getElementById('is-nova-promocao').value === '1';
-        
-        // Definir data mínima como hoje
-        const hoje = new Date().toISOString().split('T')[0];
-        const dataInicio = document.getElementById('data_inicio');
-        const dataFim = document.getElementById('data_fim');
-        
-        // Para novas promoções, definir data mínima
-        if (isNovaPromocao) {
-            dataInicio.min = hoje;
+        function mascaraData(input) {
+            let v = input.value.replace(/\D/g, "");
+            if (v.length >= 2) v = v.slice(0,2) + '/' + v.slice(2);
+            if (v.length >= 5) v = v.slice(0,5) + '/' + v.slice(5,9);
+            input.value = v;
         }
-        
-        // Atualizar data mínima do fim quando início mudar
-        dataInicio.addEventListener('change', function() {
-            dataFim.min = this.value;
-            if (dataFim.value && dataFim.value < this.value) {
-                dataFim.value = this.value;
-            }
-        });
-        
+        document.getElementById('data_inicio').addEventListener('input', function() { mascaraData(this); });
+        document.getElementById('data_fim').addEventListener('input', function() { mascaraData(this); });
         function validarDatas() {
-            const inicio = new Date(dataInicio.value);
-            const fim = new Date(dataFim.value);
-            const hoje = new Date();
-            hoje.setHours(0, 0, 0, 0); // Zerar horas para comparação apenas de data
-            
-            // Para novas promoções, validar data de início
-            if (isNovaPromocao) {
-                if (inicio < hoje) {
-                    alert('A data de início não pode ser anterior ao dia atual!');
-                    return false;
-                }
+            const inicioStr = document.getElementById('data_inicio').value;
+            const fimStr = document.getElementById('data_fim').value;
+            const regex = /^\d{2}\/\d{2}\/\d{4}$/;
+            if (!regex.test(inicioStr) || !regex.test(fimStr)) {
+                alert('Digite as datas no formato dd/mm/aaaa.');
+                return false;
             }
-            
+            const [di, mi, ai] = inicioStr.split('/').map(Number);
+            const [df, mf, af] = fimStr.split('/').map(Number);
+            const inicio = new Date(ai, mi-1, di);
+            const fim = new Date(af, mf-1, df);
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+            const isNovaPromocao = document.getElementById('is-nova-promocao').value === '1';
+            if (isNovaPromocao && inicio < hoje) {
+                alert('A data de início não pode ser anterior ao dia atual!');
+                return false;
+            }
             if (fim < inicio) {
                 alert('A data de fim não pode ser anterior à data de início!');
                 return false;
             }
-            
             return true;
-        }
-        
-        // Definir data mínima do fim baseada no início atual
-        if (dataInicio.value) {
-            dataFim.min = dataInicio.value;
         }
     </script>
 </body>

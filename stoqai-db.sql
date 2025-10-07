@@ -127,6 +127,16 @@ CREATE TABLE IF NOT EXISTS ProdutoPromocao (
     FOREIGN KEY (IdPromocao) REFERENCES Promocao(IdPromocao)
 );
 
+CREATE TABLE IF NOT EXISTS movimentacaoestoque (
+    IdMovimentacao INT AUTO_INCREMENT PRIMARY KEY,
+    IdProduto INT NOT NULL,
+    DataMovimentacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Tipo ENUM('Entrada', 'Saída', 'Ajuste', 'Venda') NOT NULL,
+    Quantidade INT NOT NULL,
+    Observacao VARCHAR(255),
+    FOREIGN KEY (IdProduto) REFERENCES Produto(IdProduto)
+);
+
 show tables;
 
 DELIMITER $$

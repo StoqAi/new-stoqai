@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Relatório de Vendas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <span class="logo-icon">◆</span>
+            <span class="logo-text">StoqAi</span>
+        </div>
+        <div class="navbar-center">
+            <a href="{{ url_for('index') }}">Produtos</a>
+            <a href="{{ url_for('categorias') }}">Categorias</a>
+            <a href="{{ url_for('fornecedores') }}">Fornecedores</a>
+            <a href="{{ url_for('vendas') }}">Vendas</a>
+            <a href="{{ url_for('promocoes') }}">Promoções</a>
+            <a href="{{ url_for('relatorios') }}" class="active">Relatórios</a>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>Relatório de Vendas</h1>
+        <div style="display: flex; gap: 18px; margin-bottom: 28px; flex-wrap: wrap;">
+            <a href="{{ url_for('relatorio_vendas_csv') }}" class="btn" style="width: 160px; height: 25px;" download>Exportar CSV</a>
+            <a href="{{ url_for('relatorios') }}" class="btn" style="width: 120px; height: 25px; background:#4b4b4b;">Voltar</a>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Venda</th>
+                    <th>Data</th>
+                    <th>Preço total</th>
+                    <th>Acessar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for id, venda in vendas.items() %}
+                <tr>
+                    <td>Venda #{{ id }}</td>
+                    <td>{{ venda.DataVenda }}</td>
+                    <td>R$ {{ '%.2f'|format(venda.ValorTotal) }}</td>
+                    <td><a href="{{ url_for('vendas', id=id) }}" class="btn-acessar">Clique aqui</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if not vendas %}
+        <p>Nenhuma venda registrada.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
